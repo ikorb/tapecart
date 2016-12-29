@@ -1,0 +1,7 @@
+*~
+.dep
+obj-*
+*.txt
+*.o65
+*.prg
+*.bin
