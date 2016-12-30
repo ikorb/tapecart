@@ -1,4 +1,4 @@
-# Tapecart Programmer's Reference # 
+# Tapecart Programmer's Reference #
 
 This document describes the Tapecart from a programmer's perspective -
 i.e., how to communicate with it to read and write data.
