@@ -26,7 +26,7 @@ Switching from streaming mode to either fastload mode or command mode
 is accomplished by sending a bit sequence using the write and motor
 lines, which is detailed in the "Streaming mode" section below.
 
-To ensure that the user can always the initial program again, the
+To ensure that the user can always run the initial program again, the
 tapecart needs to detect if the C64 is reset and return to streaming
 mode. It does this by monitoring the motor line: If at any point in
 the Fastload or Command modes the motor line becomes active, it
