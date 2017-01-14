@@ -113,9 +113,19 @@ static void display_status(void) {
   }
 
   if (tmp) {
-    cprintf("  Loader checksum  $%04x", wordval);
-    if (is_default)
-      cprintf(" (default)");
+    cprintf("  Loader checksum  ");
+    revers(!is_default);
+    cprintf("$%04x", wordval);
+    revers(0);
+
+    if (is_default) {
+      textcolor(COLOR_LIGHTGREEN);
+      cprintf(" (default) ");
+    } else {
+      textcolor(COLOR_LIGHTRED);
+      cprintf(" (MODIFIED)");
+    }
+    textcolor(COLOR_WHITE);
     cprintf("\r\n");
   } else
     cprintf("  Loader not programmed  \r\n");
