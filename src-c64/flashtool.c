@@ -426,6 +426,8 @@ int main(void) {
   textcolor(COLOR_WHITE);
 
   current_device = *((unsigned char *)0xba);
+  if (current_device < 4 || current_device > 30)
+    current_device = 8;
 
   clrscr();
   cputs("tapecart-tool v" VERSION " by Ingo Korb");
