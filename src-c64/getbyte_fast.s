@@ -1,6 +1,6 @@
 ;;   tapecart - a tape port storage pod for the C64
 ;;
-;;   Copyright (C) 2013-2016  Ingo Korb <ingo@akana.de>
+;;   Copyright (C) 2013-2017  Ingo Korb <ingo@akana.de>
 ;;   All rights reserved.
 ;;   Idea by enthusi
 ;;
