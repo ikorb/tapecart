@@ -194,10 +194,12 @@ static void dump_loader(void) {
     return;
   }
 
-  tapecart_read_loader(databuffer);
+  tapecart_read_loader(databuffer + 2);
+  databuffer[0] = 0x51;
+  databuffer[1] = 0x03;
 
-  byteswritten = cbm_write(CBM_LFN, databuffer, LOADER_LENGTH);
-  if (byteswritten != LOADER_LENGTH) {
+  byteswritten = cbm_write(CBM_LFN, databuffer, LOADER_LENGTH + 2);
+  if (byteswritten != LOADER_LENGTH + 2) {
     cputsxy(2, STATUS_START - 2, "Failed to write file");
   } else {
     cputsxy(2, STATUS_START - 2, "Dump successful");
