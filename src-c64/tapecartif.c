@@ -266,6 +266,21 @@ void tapecart_read_flash(uint32_t offset, uint16_t len, void *data) {
   }
 }
 
+void tapecart_read_flash_fast(uint32_t offset, uint16_t len, void *data) {
+  uint16_t i;
+  uint8_t *bytedata = (uint8_t *)data;
+
+  tapecart_sendbyte(CMD_READ_FLASH_FAST);
+  tapecart_send_u24(offset);
+  tapecart_send_u16(len);
+
+  SEI();
+  for (i = 0; i < len; ++i) {
+    *bytedata++ = tapecart_getbyte_fast();
+  }
+  CLI();
+}
+
 void tapecart_write_flash(uint32_t offset, uint16_t len, const void *data) {
   uint16_t i;
   const uint8_t *bytedata = (const uint8_t *)data;

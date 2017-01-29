@@ -30,6 +30,7 @@
 
 */
 
+#include <6502.h>
 #include <c64.h>
 #include <conio.h>
 #include <stdio.h>
@@ -40,6 +41,7 @@
 #include "advancedmenu.h"
 
 static unsigned char res;
+static int           byteswritten;
 
 static void write_datafile(void) {
   cputsxy(13, 2, "Write data file");
@@ -73,6 +75,70 @@ static void write_datafile(void) {
 
   cbm_close(CBM_LFN);
 }
+
+
+static void dump_flash(void) {
+  long bytesread;
+  unsigned char i;
+
+  memset(fname, 0, FILENAME_LENGTH + 1);
+
+  cputsxy(6, 3, "Dump flash contents to file");
+  cputsxy(0, 10, "Note: Screen will be blanked,");
+  cputsxy(6, 11, "hold RUN/STOP to abort.");
+  //                             0123456789012345
+  cputsxy(0, 5, "File name    : [                ]");
+  read_string(fname, FILENAME_LENGTH, 16, 5);
+
+  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open file");
+    return;
+  }
+
+  /* blank screen and wait until it is actually blanked */
+  VIC.ctrl1 &= ~(1 << 4);
+  SEI();
+  while (VIC.rasterline >  3) ;
+  while (VIC.rasterline <= 3) ;
+  while (VIC.rasterline >  3) ;
+  CLI();
+
+  flash_offset = 0;
+  i = 0;
+  while (flash_offset < total_size) {
+    if (kbhit()) {
+      if (cgetc() == KEY_STOP) {
+        cputsxy(2, STATUS_START - 2, "Aborted");
+        goto fail;
+      }
+    }
+
+    bytesread = total_size - flash_offset;
+    if (bytesread > sizeof(databuffer))
+      bytesread = sizeof(databuffer);
+
+    bordercolor(++i);
+    tapecart_read_flash_fast(flash_offset, bytesread, databuffer);
+    bordercolor(++i);
+
+    byteswritten = cbm_write(CBM_LFN, databuffer, bytesread);
+    if (byteswritten != bytesread) {
+      cputsxy(2, STATUS_START - 2, "Failed to write to file");
+      goto fail;
+    }
+
+    flash_offset += bytesread;
+  }
+
+  cputsxy(2, STATUS_START - 2, "Dump successful");
+
+ fail:
+  VIC.ctrl1 |= (1 << 4); // un-blank screen
+  bordercolor(COLOR_GRAY1);
+  cbm_close(CBM_LFN);
+}
+
 
 static void write_default_loader(void) {
   cputsxy(2, 3, "Writing...");
@@ -111,6 +177,31 @@ static void write_custom_loader(void) {
   cputsxy(2, STATUS_START - 2, "Loader updated");
 
  fail:
+  cbm_close(CBM_LFN);
+}
+
+
+static void dump_loader(void) {
+  memset(fname, 0, FILENAME_LENGTH + 1);
+  cputsxy(10, 3, "Dump loader to file");
+  //                             0123456789012345
+  cputsxy(0, 5, "File name    : [                ]");
+  read_string(fname, FILENAME_LENGTH, 16, 5);
+
+  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open file");
+    return;
+  }
+
+  tapecart_read_loader(databuffer);
+
+  byteswritten = cbm_write(CBM_LFN, databuffer, LOADER_LENGTH);
+  if (byteswritten != LOADER_LENGTH) {
+    cputsxy(2, STATUS_START - 2, "Failed to write file");
+  } else {
+    cputsxy(2, STATUS_START - 2, "Dump successful");
+  }
   cbm_close(CBM_LFN);
 }
 
@@ -161,11 +252,13 @@ static void change_bootloc(void) {
 
 static const char *advanced_menu_text[] = {
   "1. Write data file to cart",
-  "2. Write default loader",
-  "3. Write custom loader",
-  "4. Change display name",
-  "5. Change bootfile location",
-  "6. Return to main menu",
+  "2. Dump flash contents to file",
+  "3. Write default loader",
+  "4. Write custom loader",
+  "5. Dump loader to file",
+  "6. Change display name",
+  "7. Change bootfile location",
+  "8. Return to main menu",
 };
 
 void advanced_menu(void) {
@@ -184,23 +277,31 @@ void advanced_menu(void) {
       write_datafile();
       break;
 
-    case 1: // write default loader
+    case 1: // dump flash contents to file
+      dump_flash();
+      break;
+
+    case 2: // write default loader
       write_default_loader();
       break;
 
-    case 2: // write custom loader
+    case 3: // write custom loader
       write_custom_loader();
       break;
 
-    case 3: // change name
+    case 4: // dump loader to file
+      dump_loader();
+      break;
+
+    case 5: // change name
       change_name();
       break;
 
-    case 4: // change bootfile location
+    case 6: // change bootfile location
       change_bootloc();
       break;
 
-    case 5:
+    case 7:
       return;
     }
   }

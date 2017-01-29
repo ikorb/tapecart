@@ -53,6 +53,7 @@ uint32_t tapecart_get_u24(void);
 uint16_t tapecart_get_u16(void);
 
 void     tapecart_read_flash(uint32_t offset, uint16_t len, void *data);
+void     tapecart_read_flash_fast(uint32_t offset, uint16_t len, void *data);
 void     tapecart_write_flash(uint32_t offset, uint16_t len, const void *data);
 void     tapecart_erase_flashblock(uint32_t offset);
 void     tapecart_erase_64k(uint32_t offset);

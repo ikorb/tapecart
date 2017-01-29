@@ -39,25 +39,6 @@
 #include <string.h>
 #include "conutil.h"
 
-/*
- * DEL  : 0x14 (20)
- * Ins  : 0x94 (148)
- * Up   : 0x91 (145)
- * Down : 0x11 (17)
- * Left : 0x9d (157)
- * Right: 0x1d (29)
- * RET  : 0x0d (13)
- * Stop : 0x03 (3)
- */
-
-#define KEY_DEL    0x14
-#define KEY_INS    0x94
-#define KEY_UP     0x91
-#define KEY_DOWN   0x11
-#define KEY_LEFT   0x9d
-#define KEY_RIGHT  0x1d
-#define KEY_RETURN 0x0d
-#define KEY_STOP   0x03
 
 void read_string(char *buffer, unsigned char maxlen,
                  unsigned char xpos, unsigned char ypos) {

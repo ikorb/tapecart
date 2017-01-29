@@ -35,6 +35,15 @@
 
 #include <stdint.h>
 
+#define KEY_DEL    0x14
+#define KEY_INS    0x94
+#define KEY_UP     0x91
+#define KEY_DOWN   0x11
+#define KEY_LEFT   0x9d
+#define KEY_RIGHT  0x1d
+#define KEY_RETURN 0x0d
+#define KEY_STOP   0x03
+
 #define STATUS_START 18
 
 void read_string(char *buffer, unsigned char maxlen,
