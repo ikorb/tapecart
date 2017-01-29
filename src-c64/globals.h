@@ -44,9 +44,11 @@ extern uint32_t total_size;
 extern uint16_t page_size;
 extern uint16_t erase_pages;
 
-extern long flash_offset;
-
 extern char fname[FILENAME_LENGTH + 1];
 extern char strbuf[16];
+
+extern long     flash_offset;
+extern uint16_t flash_page, pages_erased;
+extern size_t   len;
 
 #endif

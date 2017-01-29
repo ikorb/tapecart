@@ -58,8 +58,6 @@ uint32_t total_size;
 uint16_t page_size;
 uint16_t erase_pages;
 
-long flash_offset;
-
 char fname[FILENAME_LENGTH + 1];
 char strbuf[16];
 unsigned char current_device;
@@ -141,31 +139,31 @@ static void display_devicenum(void) {
 
 /*** main menu items ***/
 
-static uint32_t offset;
-static uint16_t page, erased;
-static size_t   len;
+long     flash_offset;
+uint16_t flash_page, pages_erased;
+size_t   len;
 
 static void write_file(void) {
   do {
     len = cbm_read(CBM_LFN, databuffer, page_size);
 
     if (len > 0) {
-      if (erase_pages && erased == 0) {
+      if (erase_pages && pages_erased == 0) {
         gotoxy(0, 8);
-        cprintf("Erasing page %d [$%06lx]", page, offset);
+        cprintf("Erasing page %d [$%06lx]", flash_page, flash_offset);
 
-        tapecart_erase_flashblock(offset);
-        erased = erase_pages;
+        tapecart_erase_flashblock(flash_offset);
+        pages_erased = erase_pages;
       }
 
       gotoxy(0, 8);
-      cprintf("Writing page %d [$%06lx]", page, offset);
-      tapecart_write_flash(offset, len, databuffer);
-      offset += len;
+      cprintf("Writing page %d [$%06lx]", flash_page, flash_offset);
+      tapecart_write_flash(flash_offset, len, databuffer);
+      flash_offset += len;
     }
 
-    page++;
-    erased--;
+    flash_page++;
+    pages_erased--;
   } while (len > 0);
 }
 
@@ -211,9 +209,9 @@ static void write_onefiler(void) {
     if (ch == 'y') {
       /* add a small starter just before $0800 */
       memcpy(databuffer + 2, basic_starter, sizeof(basic_starter));
-      loadaddr -= sizeof(basic_starter);
-      calladdr = loadaddr;
-      offset   = 2 + sizeof(basic_starter);
+      loadaddr    -= sizeof(basic_starter);
+      calladdr     = loadaddr;
+      flash_offset = 2 + sizeof(basic_starter);
       goto skip_calladdr;
     }
   }
@@ -223,32 +221,32 @@ static void write_onefiler(void) {
   //       01234567890123456789
   cprintf("Start program at: [     ]");
   calladdr = read_uint(loadaddr, 5, 19, 7);
-  offset = 2;
+  flash_offset = 2;
 
  skip_calladdr:
   databuffer[0] = loadaddr & 0xff;
   databuffer[1] = loadaddr >> 8;
 
   /* erase first block */
-  erased = 0;
+  pages_erased = 0;
   if (erase_pages) {
     gotoxy(0, 8);
     cprintf("Erasing page %d", 0);
-    erased = erase_pages - 1; // first page written below
+    pages_erased = erase_pages - 1; // first page written below
     tapecart_erase_flashblock(0);
   }
 
   /* read remainder of first block into buffer */
-  len = cbm_read(CBM_LFN, databuffer + offset, page_size - offset);
+  len = cbm_read(CBM_LFN, databuffer + flash_offset, page_size - flash_offset);
 
   /* write it */
   gotoxy(0, 8);
-  cprintf("Writing page %d [$%06x]", page, 0);
-  tapecart_write_flash(0, offset + len, databuffer);
-  offset += len;
+  cprintf("Writing page %d [$%06x]", flash_page, 0);
+  tapecart_write_flash(0, flash_offset + len, databuffer);
+  flash_offset += len;
 
   /* write remainder of file */
-  page = 1;
+  flash_page = 1;
   write_file();
 
   /* write data offset and file name */
@@ -257,7 +255,7 @@ static void write_onefiler(void) {
     memset(fname + i, ' ', FILENAME_LENGTH - i);
   }
 
-  tapecart_write_loadinfo(0, offset, calladdr, fname);
+  tapecart_write_loadinfo(0, flash_offset, calladdr, fname);
 
   cputsxy(2, STATUS_START - 2, "Write successful");
 
@@ -288,7 +286,7 @@ static void write_datafile(void) {
     return;
   }
 
-  erased = 0;
+  pages_erased = 0;
   len = 1; // dummy value;
   write_file();
 
@@ -309,8 +307,6 @@ static void write_default_loader(void) {
 
 
 static void write_custom_loader(void) {
-  size_t len;
-
   memset(fname, 0, FILENAME_LENGTH + 1);
   cputsxy(10, 2, "Write custom loader");
   //                         0123456789012345
