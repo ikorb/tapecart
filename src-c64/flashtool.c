@@ -37,12 +37,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "advancedmenu.h"
 #include "conutil.h"
 #include "debugmenu.h"
 #include "globals.h"
 #include "tapecartif.h"
 
-static const uint8_t default_loader[LOADER_LENGTH] = {
+const uint8_t default_loader[LOADER_LENGTH] = {
   #include "loader.h"
 };
 
@@ -62,9 +63,8 @@ char fname[FILENAME_LENGTH + 1];
 char strbuf[16];
 unsigned char current_device;
 
-#define CBM_LFN 1
 
-static void display_status(void) {
+void display_status(void) {
   uint16_t offset, length, calladdr;
   uint16_t wordval;
   unsigned char i, tmp, is_default;
@@ -143,7 +143,7 @@ long     flash_offset;
 uint16_t flash_page, pages_erased;
 size_t   len;
 
-static void write_file(void) {
+void write_file(void) {
   do {
     len = cbm_read(CBM_LFN, databuffer, page_size);
 
@@ -263,121 +263,6 @@ static void write_onefiler(void) {
   cbm_close(CBM_LFN);
 }
 
-static void write_datafile(void) {
-  cputsxy(13, 2, "Write data file");
-  //             0123456789012345
-  cputsxy(0, 4, "Flash offset: [       ]");
-  flash_offset = read_uint(0, 7, 15, 4);
-
-  if (erase_pages && flash_offset % ((long)page_size * erase_pages)) {
-    gotoxy(0, 7);
-    cprintf("INFO: Flash will be erased from $%06lx",
-            flash_offset & ~((long)page_size * erase_pages - 1L));
-  }
-
-  memset(fname, 0, FILENAME_LENGTH + 1);
-  //                            0123456789012345
-  cputsxy(0, 5, "File name   : [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 5);
-
-  res = cbm_open(CBM_LFN, current_device, 3, fname);
-  if (res != 0) {
-    cputsxy(2, STATUS_START - 2, "Failed to open data file");
-    return;
-  }
-
-  pages_erased = 0;
-  len = 1; // dummy value;
-  write_file();
-
-  cputsxy(2, STATUS_START - 2, "Write successful");
-  cputsxy(2, STATUS_START - 1, "Remember to set data start+length!");
-
-  cbm_close(CBM_LFN);
-}
-
-static void write_default_loader(void) {
-  cputsxy(2, 3, "Writing...");
-
-  tapecart_write_loader(default_loader);
-
-  clear_mainarea();
-  cputsxy(2, STATUS_START - 2, "Loader updated");
-}
-
-
-static void write_custom_loader(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
-  cputsxy(10, 2, "Write custom loader");
-  //                         0123456789012345
-  cputsxy(0, 4, "File name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 12, 4);
-
-  res = cbm_open(CBM_LFN, current_device, 4, fname);
-  if (res != 0) {
-    cputsxy(2, STATUS_START - 2, "Failed to open loader file");
-    return;
-  }
-
-  cputsxy(2, 6, "Writing...");
-
-  len = cbm_read(CBM_LFN, databuffer, LOADER_LENGTH + 2);
-  if (len != LOADER_LENGTH + 2) {
-    gotoxy(2, STATUS_START - 2);
-    cprintf("Error: Read only %d byte from the file", len);
-    goto fail;
-  }
-
-  tapecart_write_loader(databuffer + 2);
-
-  cputsxy(2, STATUS_START - 2, "Loader updated");
-
- fail:
-  cbm_close(CBM_LFN);
-}
-
-
-static void change_name(void) {
-  unsigned char i;
-  uint16_t dataofs, datalen, calladdr;
-
-  tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
-
-  cputsxy(10, 2, "Change display name");
-  //             0123456789012340123456789012345
-  cputsxy(0, 4, "Display name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 4);
-
-  if (strlen(fname) < FILENAME_LENGTH) {
-    i = strlen(fname);
-    memset(fname + i, ' ', FILENAME_LENGTH - i);
-  }
-
-  tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
-}
-
-
-static void change_bootloc(void) {
-  uint16_t dataofs, datalen, calladdr;
-
-  tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
-
-  cputsxy(8, 2, "Change bootfile location");
-  gotoxy(0, 4);
-  //       0123456789012345
-  cprintf("Data offset : [$%04x]", dataofs);
-  gotoxy(0, 5);
-  cprintf("Data length : [$%04x]", datalen);
-  gotoxy(0, 6);
-  cprintf("Call address: [$%04x]", calladdr);
-
-  dataofs  = read_uint(dataofs,  5, 15, 4);
-  datalen  = read_uint(datalen,  5, 15, 5);
-  calladdr = read_uint(calladdr, 5, 15, 6);
-
-  tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
-}
-
 
 static void display_cartinfo(void) {
   unsigned char i, tmp;
@@ -420,14 +305,10 @@ static void display_cartinfo(void) {
 
 static const char *main_menu[] = {
   "1. Write onefiler",
-  "2. Write data file",
-  "3. Write default loader",
-  "4. Write custom loader",
-  "5. Change display name",
-  "6. Change bootfile location",
-  "7. Display cart info",
-  "8. Debug tools...",
-  "9. Exit",
+  "2. Advanced options...",
+  "3. Display cart info",
+  "4. Debug tools...",
+  "5. Exit",
 };
 
 int main(void) {
@@ -464,35 +345,19 @@ int main(void) {
       write_onefiler();
       break;
 
-    case 1: // write data file
-      write_datafile();
+    case 1: // Advanced options
+      advanced_menu();
       break;
 
-    case 2: // write default loader
-      write_default_loader();
-      break;
-
-    case 3: // write custom loader
-      write_custom_loader();
-      break;
-
-    case 4: // change name
-      change_name();
-      break;
-
-    case 5: // change bootfile location
-      change_bootloc();
-      break;
-
-    case 6: // display cart info
+    case 2: // display cart info
       display_cartinfo();
       break;
 
-    case 7: // debug tools submenu
+    case 3: // debug tools submenu
       debug_tool_menu();
       break;  
 
-    case 8: // exit
+    case 4: // exit
       clrscr();
       return 0;
 

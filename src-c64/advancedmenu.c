@@ -1,0 +1,207 @@
+/* tapecart - a tape port storage pod for the C64
+
+   Copyright (C) 2013-2017  Ingo Korb <ingo@akana.de>
+   All rights reserved.
+   Idea by enthusi
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+   2. Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+   THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+   FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+   OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+   HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+   LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+   OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+   SUCH DAMAGE.
+
+
+   advancedmenu.c: "Low level" cart read/write menu items
+
+*/
+
+#include <c64.h>
+#include <conio.h>
+#include <stdio.h>
+#include <string.h>
+#include "conutil.h"
+#include "globals.h"
+#include "tapecartif.h"
+#include "advancedmenu.h"
+
+static unsigned char res;
+
+static void write_datafile(void) {
+  cputsxy(13, 2, "Write data file");
+  //             0123456789012345
+  cputsxy(0, 4, "Flash offset: [       ]");
+  flash_offset = read_uint(0, 7, 15, 4);
+
+  if (erase_pages && flash_offset % ((long)page_size * erase_pages)) {
+    gotoxy(0, 7);
+    cprintf("INFO: Flash will be erased from $%06lx",
+            flash_offset & ~((long)page_size * erase_pages - 1L));
+  }
+
+  memset(fname, 0, FILENAME_LENGTH + 1);
+  //                            0123456789012345
+  cputsxy(0, 5, "File name   : [                ]");
+  read_string(fname, FILENAME_LENGTH, 15, 5);
+
+  res = cbm_open(CBM_LFN, current_device, 3, fname);
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open data file");
+    return;
+  }
+
+  pages_erased = 0;
+  len = 1; // dummy value;
+  write_file();
+
+  cputsxy(2, STATUS_START - 2, "Write successful");
+  cputsxy(2, STATUS_START - 1, "Remember to set data start+length!");
+
+  cbm_close(CBM_LFN);
+}
+
+static void write_default_loader(void) {
+  cputsxy(2, 3, "Writing...");
+
+  tapecart_write_loader(default_loader);
+
+  clear_mainarea();
+  cputsxy(2, STATUS_START - 2, "Loader updated");
+}
+
+
+static void write_custom_loader(void) {
+  memset(fname, 0, FILENAME_LENGTH + 1);
+  cputsxy(10, 2, "Write custom loader");
+  //                         0123456789012345
+  cputsxy(0, 4, "File name: [                ]");
+  read_string(fname, FILENAME_LENGTH, 12, 4);
+
+  res = cbm_open(CBM_LFN, current_device, 4, fname);
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open loader file");
+    return;
+  }
+
+  cputsxy(2, 6, "Writing...");
+
+  len = cbm_read(CBM_LFN, databuffer, LOADER_LENGTH + 2);
+  if (len != LOADER_LENGTH + 2) {
+    gotoxy(2, STATUS_START - 2);
+    cprintf("Error: Read only %d byte from the file", len);
+    goto fail;
+  }
+
+  tapecart_write_loader(databuffer + 2);
+
+  cputsxy(2, STATUS_START - 2, "Loader updated");
+
+ fail:
+  cbm_close(CBM_LFN);
+}
+
+
+static void change_name(void) {
+  unsigned char i;
+  uint16_t dataofs, datalen, calladdr;
+
+  tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
+
+  cputsxy(10, 2, "Change display name");
+  //             0123456789012340123456789012345
+  cputsxy(0, 4, "Display name: [                ]");
+  read_string(fname, FILENAME_LENGTH, 15, 4);
+
+  if (strlen(fname) < FILENAME_LENGTH) {
+    i = strlen(fname);
+    memset(fname + i, ' ', FILENAME_LENGTH - i);
+  }
+
+  tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
+}
+
+
+static void change_bootloc(void) {
+  uint16_t dataofs, datalen, calladdr;
+
+  tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
+
+  cputsxy(8, 2, "Change bootfile location");
+  gotoxy(0, 4);
+  //       0123456789012345
+  cprintf("Data offset : [$%04x]", dataofs);
+  gotoxy(0, 5);
+  cprintf("Data length : [$%04x]", datalen);
+  gotoxy(0, 6);
+  cprintf("Call address: [$%04x]", calladdr);
+
+  dataofs  = read_uint(dataofs,  5, 15, 4);
+  datalen  = read_uint(datalen,  5, 15, 5);
+  calladdr = read_uint(calladdr, 5, 15, 6);
+
+  tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
+}
+
+
+/*** menu ***/
+
+static const char *advanced_menu_text[] = {
+  "1. Write data file to cart",
+  "2. Write default loader",
+  "3. Write custom loader",
+  "4. Change display name",
+  "5. Change bootfile location",
+  "6. Return to main menu",
+};
+
+void advanced_menu(void) {
+  unsigned char res;
+
+  while (1)  {
+    display_status();
+
+    clear_mainarea();
+    res = show_menu(sizeof(advanced_menu_text) / sizeof(advanced_menu_text[0]),
+                    advanced_menu_text, 0, 2, 3);
+    clear_mainarea_full();
+
+    switch (res) {
+    case 0: // write data file
+      write_datafile();
+      break;
+
+    case 1: // write default loader
+      write_default_loader();
+      break;
+
+    case 2: // write custom loader
+      write_custom_loader();
+      break;
+
+    case 3: // change name
+      change_name();
+      break;
+
+    case 4: // change bootfile location
+      change_bootloc();
+      break;
+
+    case 5:
+      return;
+    }
+  }
+}

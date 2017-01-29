@@ -26,38 +26,13 @@
    SUCH DAMAGE.
 
 
-   globals.h: Declaration of global variables
-
-   (yucky, but better for code efficiency in cc65)
+   advancedmenu.h: Declarations for calling up the advanced options menu
 
 */
 
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#ifndef ADVANCEDMENU_H
+#define ADVANCEDMENU_H
 
-#include <stdint.h>
-#include "tapecartif.h" // for FILENAME_LENGTH
-
-#define CBM_LFN 1
-
-/* from flashtool.c */
-extern const uint8_t default_loader[LOADER_LENGTH];
-
-extern uint8_t  databuffer[4096];
-extern uint32_t total_size;
-extern uint16_t page_size;
-extern uint16_t erase_pages;
-
-extern char fname[FILENAME_LENGTH + 1];
-extern char strbuf[16];
-
-extern unsigned char current_device;
-
-extern long     flash_offset;
-extern uint16_t flash_page, pages_erased;
-extern size_t   len;
-
-void display_status(void);
-void write_file(void);
+void advanced_menu(void);
 
 #endif
