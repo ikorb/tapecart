@@ -41,12 +41,14 @@
 static void hexdump_flash(void) {
   unsigned int i;
 
+  cputsxy(13, 2, "Hexdump flash");
   /* ask for start address */
   //             0123456789012345
-  cputsxy(0, 3, "Flash offset: [       ]");
-  flash_offset = read_uint(0, 7, 15, 3);
+  cputsxy(0, 4, "Flash offset: [       ]");
+  flash_offset = read_uint(0, 7, 15, 4);
 
   /* dump data to screen */
+  clear_mainarea();
   gotoxy(0, 2);
   tapecart_read_flash(0, 128, databuffer);
   for (i = 0; i < 128; i++) {
@@ -65,10 +67,11 @@ static uint32_t data_length;
 static void crc32_flash(void) {
   uint32_t crc;
 
-  cputsxy(0, 3, "Flash offset: [       ]");
-  cputsxy(0, 4, "Length      : [       ]");
-  flash_offset = read_uint(0, 7, 15, 3);
-  data_length  = read_uint(total_size - 1, 7, 15, 4);
+  cputsxy(9, 2, "Calculate flash CRC32");
+  cputsxy(0, 4, "Flash offset: [       ]");
+  cputsxy(0, 5, "Length      : [       ]");
+  flash_offset = read_uint(0, 7, 15, 4);
+  data_length  = read_uint(total_size - 1, 7, 15, 5);
 
   tapecart_sendbyte(CMD_CRC32_FLASH);
   tapecart_send_u24(flash_offset);
@@ -84,13 +87,15 @@ static void crc32_flash(void) {
 static void set_debugflags(void) {
   uint16_t debugflags;
 
+  cputsxy(12, 2, "Set debug flags");
+
   tapecart_sendbyte(CMD_READ_DEBUGFLAGS);
   debugflags = tapecart_get_u16();
 
-  gotoxy(0, 3);
+  gotoxy(0, 4);
   //       012345678901234
   cprintf("Debug flags: [     ]");
-  debugflags = read_uint(debugflags, 5, 14, 3);
+  debugflags = read_uint(debugflags, 5, 14, 4);
 
   /* remove the ok flag, it would confuse this program */
   debugflags &= ~DEBUGFLAG_SEND_CMDOK;

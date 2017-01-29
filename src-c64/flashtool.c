@@ -133,6 +133,12 @@ static void display_status(void) {
 }
 
 
+static void display_devicenum(void) {
+  gotoxy(27, STATUS_START);
+  cprintf("\0263Device: %02d\0253", current_device);
+}
+
+
 /*** main menu items ***/
 
 static uint32_t offset;
@@ -145,14 +151,14 @@ static void write_file(void) {
 
     if (len > 0) {
       if (erase_pages && erased == 0) {
-        gotoxy(0, 7);
+        gotoxy(0, 8);
         cprintf("Erasing page %d [$%06lx]", page, offset);
 
         tapecart_erase_flashblock(offset);
         erased = erase_pages;
       }
 
-      gotoxy(0, 7);
+      gotoxy(0, 8);
       cprintf("Writing page %d [$%06lx]", page, offset);
       tapecart_write_flash(offset, len, databuffer);
       offset += len;
@@ -172,11 +178,12 @@ static void write_onefiler(void) {
   size_t i;
 
   memset(fname, 0, FILENAME_LENGTH + 1);
+  cputsxy(13, 2, "Write onefiler");
   //                             0123456789012345
-  cputsxy(0, 3, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 3);
+  cputsxy(0, 4, "File name    : [                ]");
+  read_string(fname, FILENAME_LENGTH, 16, 4);
 
-  res = cbm_open(CBM_LFN, current_device, 3, fname);
+  res = cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open data file");
     return;
@@ -188,17 +195,18 @@ static void write_onefiler(void) {
     goto fail;
   }
 
-  gotoxy(0, 5);
+  gotoxy(0, 6);
   cprintf("Load address is $%04x", loadaddr);
 
   /* ask about basic starter */
   if (loadaddr == 0x0801) {
-    gotoxy(0, 6);
-    cprintf("Use BASIC starter? (Y/N)");
+    gotoxy(0, 7);
+    cprintf("Use BASIC starter? (Y/N) ");
 
     do {
       ch = cgetc();
     } while (ch != 'y' && ch != 'n');
+    cputc(ch);
 
     if (ch == 'y') {
       /* add a small starter just before $0800 */
@@ -211,10 +219,10 @@ static void write_onefiler(void) {
   }
 
   /* ask for call address */
-  gotoxy(0, 6);
+  gotoxy(0, 7);
   //       01234567890123456789
   cprintf("Start program at: [     ]");
-  calladdr = read_uint(loadaddr, 5, 19, 6);
+  calladdr = read_uint(loadaddr, 5, 19, 7);
   offset = 2;
 
  skip_calladdr:
@@ -224,7 +232,7 @@ static void write_onefiler(void) {
   /* erase first block */
   erased = 0;
   if (erase_pages) {
-    gotoxy(0, 7);
+    gotoxy(0, 8);
     cprintf("Erasing page %d", 0);
     erased = erase_pages - 1; // first page written below
     tapecart_erase_flashblock(0);
@@ -234,7 +242,7 @@ static void write_onefiler(void) {
   len = cbm_read(CBM_LFN, databuffer + offset, page_size - offset);
 
   /* write it */
-  gotoxy(0, 7);
+  gotoxy(0, 8);
   cprintf("Writing page %d [$%06x]", page, 0);
   tapecart_write_flash(0, offset + len, databuffer);
   offset += len;
@@ -258,20 +266,21 @@ static void write_onefiler(void) {
 }
 
 static void write_datafile(void) {
+  cputsxy(13, 2, "Write data file");
   //             0123456789012345
-  cputsxy(0, 3, "Flash offset: [       ]");
-  flash_offset = read_uint(0, 7, 15, 3);
+  cputsxy(0, 4, "Flash offset: [       ]");
+  flash_offset = read_uint(0, 7, 15, 4);
 
   if (erase_pages && flash_offset % ((long)page_size * erase_pages)) {
-    gotoxy(0, 6);
+    gotoxy(0, 7);
     cprintf("INFO: Flash will be erased from $%06lx",
             flash_offset & ~((long)page_size * erase_pages - 1L));
   }
 
   memset(fname, 0, FILENAME_LENGTH + 1);
   //                            0123456789012345
-  cputsxy(0, 4, "File name   : [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 4);
+  cputsxy(0, 5, "File name   : [                ]");
+  read_string(fname, FILENAME_LENGTH, 15, 5);
 
   res = cbm_open(CBM_LFN, current_device, 3, fname);
   if (res != 0) {
@@ -303,17 +312,18 @@ static void write_custom_loader(void) {
   size_t len;
 
   memset(fname, 0, FILENAME_LENGTH + 1);
+  cputsxy(10, 2, "Write custom loader");
   //                         0123456789012345
-  cputsxy(0, 3, "File name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 12, 3);
+  cputsxy(0, 4, "File name: [                ]");
+  read_string(fname, FILENAME_LENGTH, 12, 4);
 
-  res = cbm_open(CBM_LFN, current_device, 3, fname);
+  res = cbm_open(CBM_LFN, current_device, 4, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open loader file");
     return;
   }
 
-  cputsxy(2, 5, "Writing...");
+  cputsxy(2, 6, "Writing...");
 
   len = cbm_read(CBM_LFN, databuffer, LOADER_LENGTH + 2);
   if (len != LOADER_LENGTH + 2) {
@@ -336,10 +346,11 @@ static void change_name(void) {
   uint16_t dataofs, datalen, calladdr;
 
   tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
-  
+
+  cputsxy(10, 2, "Change display name");
   //             0123456789012340123456789012345
-  cputsxy(0, 3, "Display name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 3);
+  cputsxy(0, 4, "Display name: [                ]");
+  read_string(fname, FILENAME_LENGTH, 15, 4);
 
   if (strlen(fname) < FILENAME_LENGTH) {
     i = strlen(fname);
@@ -355,14 +366,18 @@ static void change_bootloc(void) {
 
   tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
 
-  //             0123456789012345
-  cputsxy(0, 3, "Data offset : [     ]");
-  cputsxy(0, 4, "Data length : [     ]");
-  cputsxy(0, 5, "Call address: [     ]");
+  cputsxy(8, 2, "Change bootfile location");
+  gotoxy(0, 4);
+  //       0123456789012345
+  cprintf("Data offset : [$%04x]", dataofs);
+  gotoxy(0, 5);
+  cprintf("Data length : [$%04x]", datalen);
+  gotoxy(0, 6);
+  cprintf("Call address: [$%04x]", calladdr);
 
-  dataofs  = read_uint(dataofs,  5, 15, 3);
-  datalen  = read_uint(datalen,  5, 15, 4);
-  calladdr = read_uint(calladdr, 5, 15, 5);
+  dataofs  = read_uint(dataofs,  5, 15, 4);
+  datalen  = read_uint(datalen,  5, 15, 5);
+  calladdr = read_uint(calladdr, 5, 15, 6);
 
   tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
 }
@@ -371,7 +386,8 @@ static void change_bootloc(void) {
 static void display_cartinfo(void) {
   unsigned char i, tmp;
 
-  gotoxy(0, 3);
+  cputsxy(12, 2, "Cart information");
+  gotoxy(0, 4);
   tapecart_sendbyte(CMD_READ_DEVICEINFO);
   i = 0;
   do {
@@ -380,17 +396,17 @@ static void display_cartinfo(void) {
     i++;
   } while (tmp != 0);
 
-  cprintf("  %s\r\n", databuffer);
-
-  gotoxy(0, 4);
-  cprintf("Total size: %ld byte", total_size);
-
-  gotoxy(0, 5);
-  cprintf("Page size : %d byte", page_size);
+  cprintf("Ident: %s\r\n", databuffer);
 
   gotoxy(0, 6);
+  cprintf("Total size: %7ld byte", total_size);
+
+  gotoxy(0, 7);
+  cprintf("Page size : %7d byte", page_size);
+
+  gotoxy(0, 8);
   if (erase_pages) {
-    cprintf("Erase size: %ld byte (%d page%s)",
+    cprintf("Erase size: %7ld byte (%d page%s)",
             (uint32_t)erase_pages * page_size,
             erase_pages,
             (erase_pages == 1) ? "": "s");
@@ -434,6 +450,8 @@ int main(void) {
   chlinexy(0, 1, 40);
   chlinexy(0, STATUS_START, 40);
   clear_mainarea_full();
+
+  display_devicenum();
 
   tapecart_cmdmode();
 
