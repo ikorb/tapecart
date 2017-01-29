@@ -40,8 +40,8 @@
 #include "tapecartif.h"
 #include "advancedmenu.h"
 
-static unsigned char res;
-static int           byteswritten;
+int  byteswritten;
+long bytesread;
 
 static void write_datafile(void) {
   cputsxy(13, 2, "Write data file");
@@ -66,9 +66,9 @@ static void write_datafile(void) {
     return;
   }
 
+  flash_page = flash_offset / page_size;
   pages_erased = 0;
-  len = 1; // dummy value;
-  write_file();
+  write_file(-1);
 
   cputsxy(2, STATUS_START - 2, "Write successful");
   cputsxy(2, STATUS_START - 1, "Remember to set data start+length!");
@@ -77,24 +77,9 @@ static void write_datafile(void) {
 }
 
 
-static void dump_flash(void) {
-  long bytesread;
+/* helper function for dump_flash, dump_tcrt */
+void dump_flash_to_file(void) {
   unsigned char i;
-
-  memset(fname, 0, FILENAME_LENGTH + 1);
-
-  cputsxy(6, 3, "Dump flash contents to file");
-  cputsxy(0, 10, "Note: Screen will be blanked,");
-  cputsxy(6, 11, "hold RUN/STOP to abort.");
-  //                             0123456789012345
-  cputsxy(0, 5, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 5);
-
-  res = cbm_open(CBM_LFN, current_device, 1, fname);
-  if (res != 0) {
-    cputsxy(2, STATUS_START - 2, "Failed to open file");
-    return;
-  }
 
   /* blank screen and wait until it is actually blanked */
   VIC.ctrl1 &= ~(1 << 4);
@@ -137,6 +122,26 @@ static void dump_flash(void) {
   VIC.ctrl1 |= (1 << 4); // un-blank screen
   bordercolor(COLOR_GRAY1);
   cbm_close(CBM_LFN);
+}
+
+
+static void dump_flash(void) {
+  memset(fname, 0, FILENAME_LENGTH + 1);
+
+  cputsxy(6, 3, "Dump flash contents to file");
+  cputsxy(0, 10, "Note: Screen will be blanked,");
+  cputsxy(6, 11, "hold RUN/STOP to abort.");
+  //                             0123456789012345
+  cputsxy(0, 5, "File name    : [                ]");
+  read_string(fname, FILENAME_LENGTH, 16, 5);
+
+  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open file");
+    return;
+  }
+
+  dump_flash_to_file();
 }
 
 
@@ -264,8 +269,6 @@ static const char *advanced_menu_text[] = {
 };
 
 void advanced_menu(void) {
-  unsigned char res;
-
   while (1)  {
     display_status();
 

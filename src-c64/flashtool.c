@@ -33,6 +33,7 @@
 #include <6502.h>
 #include <c64.h>
 #include <conio.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,7 @@
 #include "debugmenu.h"
 #include "globals.h"
 #include "tapecartif.h"
+#include "tcrt.h"
 
 const uint8_t default_loader[LOADER_LENGTH] = {
   #include "loader.h"
@@ -62,6 +64,11 @@ uint16_t erase_pages;
 char fname[FILENAME_LENGTH + 1];
 char strbuf[16];
 unsigned char current_device;
+
+long          flash_offset;
+uint16_t      flash_page, pages_erased;
+size_t        len;
+unsigned char res;
 
 
 void display_status(void) {
@@ -139,13 +146,16 @@ static void display_devicenum(void) {
 
 /*** main menu items ***/
 
-long     flash_offset;
-uint16_t flash_page, pages_erased;
-size_t   len;
+/* write at most limit bytes to flash, or everything if limit is -1 */
+bool write_file(long limit) {
+  uint16_t to_read;
 
-void write_file(void) {
   do {
-    len = cbm_read(CBM_LFN, databuffer, page_size);
+    to_read = page_size;
+    if (limit >= 0 && to_read > limit)
+      to_read = limit;
+
+    len = cbm_read(CBM_LFN, databuffer, to_read);
 
     if (len > 0) {
       if (erase_pages && pages_erased == 0) {
@@ -160,17 +170,22 @@ void write_file(void) {
       cprintf("Writing page %d [$%06lx]", flash_page, flash_offset);
       tapecart_write_flash(flash_offset, len, databuffer);
       flash_offset += len;
+      limit        -= len;
     }
 
     flash_page++;
     pages_erased--;
-  } while (len > 0);
+  } while (len > 0 && limit != 0);
+
+  if (limit > 0)
+    return false;
+  else
+    return true;
 }
 
 static uint16_t loadaddr;
 static uint16_t calladdr;
 static char ch;
-static unsigned char res;
 
 static void write_onefiler(void) {
   size_t i;
@@ -247,7 +262,7 @@ static void write_onefiler(void) {
 
   /* write remainder of file */
   flash_page = 1;
-  write_file();
+  write_file(-1);
 
   /* write data offset and file name */
   if (strlen(fname) < FILENAME_LENGTH) {
@@ -304,16 +319,16 @@ static void display_cartinfo(void) {
 /*** main ***/
 
 static const char *main_menu[] = {
-  "1. Write onefiler",
-  "2. Advanced options...",
-  "3. Display cart info",
-  "4. Debug tools...",
-  "5. Exit",
+  "1. Write onefiler to cart",
+  "2. Write TCRT file to cart",
+  "3. Dump cart to TCRT file",
+  "4. Advanced options...",
+  "5. Display cart info",
+  "6. Debug tools...",
+  "7. Exit",
 };
 
 int main(void) {
-  unsigned char res;
-
   bordercolor(COLOR_GRAY1);
   bgcolor(COLOR_GRAY1);
   textcolor(COLOR_WHITE);
@@ -345,19 +360,27 @@ int main(void) {
       write_onefiler();
       break;
 
-    case 1: // Advanced options
+    case 1: // write TCRT
+      write_tcrt();
+      break;
+
+    case 2: // dump to TCRT
+      dump_tcrt();
+      break;
+
+    case 3: // Advanced options
       advanced_menu();
       break;
 
-    case 2: // display cart info
+    case 4: // display cart info
       display_cartinfo();
       break;
 
-    case 3: // debug tools submenu
+    case 5: // debug tools submenu
       debug_tool_menu();
       break;  
 
-    case 4: // exit
+    case 6: // exit
       clrscr();
       return 0;
 

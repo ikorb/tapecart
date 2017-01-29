@@ -26,47 +26,29 @@
    SUCH DAMAGE.
 
 
-   globals.h: Declaration of global variables
-
-   (yucky, but better for code efficiency in cc65)
+   tcrt.h: TCRT read/write
 
 */
 
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#ifndef TCRT_H
+#define TCRT_H
 
-#include <stdbool.h>
-#include <stdint.h>
-#include "tapecartif.h" // for FILENAME_LENGTH
+#define TCRT_VERSION            1
+#define TCRT_HEADER_SIZE        16
+#define TCRT_OFFSET_VERSION     16
+#define TCRT_OFFSET_DATAADDR    18
+#define TCRT_OFFSET_DATALENGTH  20
+#define TCRT_OFFSET_CALLADDR    22
+#define TCRT_OFFSET_FILENAME    24
+#define TCRT_OFFSET_FLAGS       40
+#define TCRT_FLAG_LOADERPRESENT 1
+#define TCRT_OFFSET_LOADER      41
+#define TCRT_OFFSET_FLASHLENGTH 212
+#define TCRT_OFFSET_FLASHDATA   216
 
-#define CBM_LFN 1
+extern const uint8_t tcrt_header[TCRT_HEADER_SIZE];
 
-/* from flashtool.c */
-extern const uint8_t default_loader[LOADER_LENGTH];
-
-extern uint8_t  databuffer[4096];
-extern uint32_t total_size;
-extern uint16_t page_size;
-extern uint16_t erase_pages;
-
-extern char fname[FILENAME_LENGTH + 1];
-extern char strbuf[16];
-
-extern unsigned char current_device;
-
-extern long          flash_offset;
-extern uint16_t      flash_page, pages_erased;
-extern size_t        len;
-extern unsigned char res;
-
-void display_status(void);
-bool write_file(long limit);
-
-
-/* from advancedmenu.c */
-extern int  byteswritten;
-extern long bytesread;
-
-void dump_flash_to_file(void);
+void write_tcrt(void);
+void dump_tcrt(void);
 
 #endif

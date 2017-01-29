@@ -114,8 +114,6 @@ static const char *debug_menu[] = {
 };
 
 void debug_tool_menu(void) {
-  unsigned char res;
-
   while (1) {
     clear_mainarea();
     res = show_menu(sizeof(debug_menu) / sizeof(debug_menu[0]),
