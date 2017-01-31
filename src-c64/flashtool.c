@@ -194,7 +194,8 @@ static void write_onefiler(void) {
   cputsxy(13, 2, "Write onefiler");
   //                             0123456789012345
   cputsxy(0, 4, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 4);
+  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
@@ -236,6 +237,8 @@ static void write_onefiler(void) {
   //       01234567890123456789
   cprintf("Start program at: [     ]");
   calladdr = read_uint(loadaddr, 5, 19, 7);
+  if (input_aborted)
+    goto fail;
   flash_offset = 2;
 
  skip_calladdr:

@@ -46,6 +46,8 @@ static void hexdump_flash(void) {
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
   flash_offset = read_uint(0, 7, 15, 4);
+  if (input_aborted)
+    return;
 
   /* dump data to screen */
   clear_mainarea();
@@ -71,7 +73,11 @@ static void crc32_flash(void) {
   cputsxy(0, 4, "Flash offset: [       ]");
   cputsxy(0, 5, "Length      : [       ]");
   flash_offset = read_uint(0, 7, 15, 4);
+  if (input_aborted)
+    return;
   data_length  = read_uint(total_size - 1, 7, 15, 5);
+  if (input_aborted)
+    return;
 
   tapecart_sendbyte(CMD_CRC32_FLASH);
   tapecart_send_u24(flash_offset);
@@ -96,6 +102,8 @@ static void set_debugflags(void) {
   //       012345678901234
   cprintf("Debug flags: [     ]");
   debugflags = read_uint(debugflags, 5, 14, 4);
+  if (input_aborted)
+    return;
 
   /* remove the ok flag, it would confuse this program */
   debugflags &= ~DEBUGFLAG_SEND_CMDOK;

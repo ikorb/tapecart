@@ -33,6 +33,7 @@
 #ifndef CONUTIL_H
 #define CONUTIL_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define KEY_DEL    0x14
@@ -46,7 +47,9 @@
 
 #define STATUS_START 18
 
-void read_string(char *buffer, unsigned char maxlen,
+extern bool input_aborted;
+
+bool read_string(char *buffer, unsigned char maxlen,
                  unsigned char xpos, unsigned char ypos);
 uint32_t read_uint(uint32_t preset, unsigned char width,
                    unsigned char xpos, unsigned char ypos);

@@ -48,6 +48,8 @@ static void write_datafile(void) {
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
   flash_offset = read_uint(0, 7, 15, 4);
+  if (input_aborted)
+    return;
 
   if (erase_pages && flash_offset % ((long)page_size * erase_pages)) {
     gotoxy(0, 7);
@@ -58,7 +60,8 @@ static void write_datafile(void) {
   memset(fname, 0, FILENAME_LENGTH + 1);
   //                            0123456789012345
   cputsxy(0, 5, "File name   : [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 5);
+  if (!read_string(fname, FILENAME_LENGTH, 15, 5))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 3, fname);
   if (res != 0) {
@@ -133,7 +136,8 @@ static void dump_flash(void) {
   cputsxy(6, 11, "hold RUN/STOP to abort.");
   //                             0123456789012345
   cputsxy(0, 5, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 5);
+  if (!read_string(fname, FILENAME_LENGTH, 16, 5))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
@@ -160,7 +164,8 @@ static void write_custom_loader(void) {
   cputsxy(10, 2, "Write custom loader");
   //                         0123456789012345
   cputsxy(0, 4, "File name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 12, 4);
+  if (!read_string(fname, FILENAME_LENGTH, 12, 4))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 4, fname);
   if (res != 0) {
@@ -191,7 +196,8 @@ static void dump_loader(void) {
   cputsxy(10, 3, "Dump loader to file");
   //                             0123456789012345
   cputsxy(0, 5, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 5);
+  if (!read_string(fname, FILENAME_LENGTH, 16, 5))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
@@ -222,7 +228,8 @@ static void change_name(void) {
   cputsxy(10, 2, "Change display name");
   //             0123456789012340123456789012345
   cputsxy(0, 4, "Display name: [                ]");
-  read_string(fname, FILENAME_LENGTH, 15, 4);
+  if (!read_string(fname, FILENAME_LENGTH, 15, 4))
+    return;
 
   if (strlen(fname) < FILENAME_LENGTH) {
     i = strlen(fname);
@@ -248,8 +255,14 @@ static void change_bootloc(void) {
   cprintf("Call address: [$%04x]", calladdr);
 
   dataofs  = read_uint(dataofs,  5, 15, 4);
+  if (input_aborted)
+    return;
   datalen  = read_uint(datalen,  5, 15, 5);
+  if (input_aborted)
+    return;
   calladdr = read_uint(calladdr, 5, 15, 6);
+  if (input_aborted)
+    return;
 
   tapecart_write_loadinfo(dataofs, datalen, calladdr, fname);
 }

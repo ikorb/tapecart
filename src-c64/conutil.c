@@ -39,8 +39,9 @@
 #include <string.h>
 #include "conutil.h"
 
+bool input_aborted;
 
-void read_string(char *buffer, unsigned char maxlen,
+bool read_string(char *buffer, unsigned char maxlen,
                  unsigned char xpos, unsigned char ypos) {
   unsigned char pos;
   unsigned char i;
@@ -79,7 +80,13 @@ void read_string(char *buffer, unsigned char maxlen,
 
       case KEY_RETURN:
         cursor(curs_state);
-        return;
+        input_aborted = false;
+        return true;
+
+      case KEY_STOP:
+        cursor(curs_state);
+        input_aborted = true;
+        return false;
 
       case KEY_DEL:
         if (pos > 0) {
@@ -135,11 +142,17 @@ uint32_t read_uint(uint32_t preset, unsigned char width,
 
     case KEY_RETURN:
       cursor(curs_state);
+      input_aborted = false;
       if (hexbuffer[0] == '$') {
         return strtol(hexbuffer+1, NULL, 16);
       } else {
         return strtol(hexbuffer, NULL, 10);
       }
+
+    case KEY_STOP:
+      cursor(curs_state);
+      input_aborted = true;
+      return 0;
 
     default:
       if (pos == 0) {

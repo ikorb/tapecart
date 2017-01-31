@@ -60,7 +60,8 @@ void write_tcrt(void) {
 
   //                             0123456789012345
   cputsxy(0, 4, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 4);
+  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
@@ -168,7 +169,8 @@ void dump_tcrt(void) {
 
   //                             0123456789012345
   cputsxy(0, 4, "File name    : [                ]");
-  read_string(fname, FILENAME_LENGTH, 16, 4);
+  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+    return;
 
   res = cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
