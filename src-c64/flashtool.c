@@ -159,14 +159,14 @@ bool write_file(long limit) {
 
     if (len > 0) {
       if (erase_pages && pages_erased == 0) {
-        gotoxy(0, 8);
+        gotoxy(0, 9);
         cprintf("Erasing page %d [$%06lx]", flash_page, flash_offset);
 
         tapecart_erase_flashblock(flash_offset);
         pages_erased = erase_pages;
       }
 
-      gotoxy(0, 8);
+      gotoxy(0, 9);
       cprintf("Writing page %d [$%06lx]", flash_page, flash_offset);
       tapecart_write_flash(flash_offset, len, databuffer);
       flash_offset += len;
@@ -233,10 +233,10 @@ static void write_onefiler(void) {
   }
 
   /* ask for call address */
-  gotoxy(0, 7);
+  gotoxy(0, 8);
   //       01234567890123456789
   cprintf("Start program at: [     ]");
-  calladdr = read_uint(loadaddr, 5, 19, 7);
+  calladdr = read_uint(loadaddr, 5, 19, 8);
   if (input_aborted)
     goto fail;
   flash_offset = 2;
@@ -248,7 +248,7 @@ static void write_onefiler(void) {
   /* erase first block */
   pages_erased = 0;
   if (erase_pages) {
-    gotoxy(0, 8);
+    gotoxy(0, 9);
     cprintf("Erasing page %d", 0);
     pages_erased = erase_pages - 1; // first page written below
     tapecart_erase_flashblock(0);
@@ -258,7 +258,7 @@ static void write_onefiler(void) {
   len = cbm_read(CBM_LFN, databuffer + flash_offset, page_size - flash_offset);
 
   /* write it */
-  gotoxy(0, 8);
+  gotoxy(0, 9);
   cprintf("Writing page %d [$%06x]", flash_page, 0);
   tapecart_write_flash(0, flash_offset + len, databuffer);
   flash_offset += len;
