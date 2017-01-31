@@ -29,7 +29,7 @@
 # Makefile: program construction rules
 #
 
-VERSION := 1.0
+VERSION := 1.1
 
 CFLAGS  := -Oi -DVERSION=\"$(VERSION)\"
 ASFLAGS :=
