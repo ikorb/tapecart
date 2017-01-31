@@ -40,7 +40,7 @@
 #define FILENAME_LENGTH 16
 #define LOADER_LENGTH   171
 
-void     tapecart_cmdmode(void);
+bool     tapecart_cmdmode(void);
 void     tapecart_streammode(void);
 void     tapecart_sendbyte(uint8_t byte);
 uint8_t  tapecart_getbyte(void);
