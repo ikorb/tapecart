@@ -1,0 +1,4 @@
+export POWER_SWITCH=9
+export MUX_ENABLE=17
+export MUX_SWITCH=4
+export RESET_OUT=18

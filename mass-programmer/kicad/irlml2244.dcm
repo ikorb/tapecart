@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP IRLML2244
+D -20V Vds, -4.3A Id, HEXFET P-Channel MOSFET, SOT-23
+K HEXFET P-Channel MOSFET
+F http://www.infineon.com/dgdl/irlml2244pbf.pdf?fileId=5546d462533600a401535664bfff25f0
+$ENDCMP
+#
+#End Doc Library

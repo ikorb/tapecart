@@ -12,6 +12,34 @@ The tapecart is a low-cost flash storage device for the Commodore 64's
 tape port. This repository contains source code and documentation
 related to it and will one day contain the schematics and layout files too.
 
+# Structure of the repository #
+
+This repository is organized as follows:
+
+* doc
+
+    This directory contains general documentation regarding the
+    tapecart like the protocol it uses to communicate with the C64.
+
+* src-c64
+
+    This directory containts the source code for the C64-side
+    software, currently the initial loader and the flashtool.
+
+* src-firmware
+
+    This directory contains the source code for the firmware running
+    on the tapecart.
+
+* mass-programmer
+
+    This directory contains schematics, layout and software for a
+    Raspberry Pi addon board that can be used for mass-programming
+    tapecarts.
+
+Schematics and layout for the tapecart itself will be released at a
+later date.
+
 # License #
 
 The firmware itself is distributed under the following conditions:
