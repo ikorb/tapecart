@@ -20,6 +20,8 @@ file format will be specified.
 
 This document describes version 1 of the tapecart image file format.
 
+2017-05-12: Changed offset 40 (loader flag) to a bit field (misc. flags)
+
 # Format #
 
 All data fields in a tapecart image are stored in little endian.
@@ -57,20 +59,41 @@ READ_LOADINFO/WRITE_LOADINFO commands:
     when the user loads the initial loader.
 
 Although it is not recommended to change the initial loader, the
-tapecart image file format includes it for completeness:
+tapecart image file format includes it for completeness. Its presence
+in the file is indicated by a flag in the next field:
 
-- Offset 40: 1 byte loader flag  
-    This byte is 1, if the following 171 byte contain a valid initial
-    loader or 0 if the default initial loader is assumed, but not
-    included in the TCRT file. Even if this byte is 0, the following
-    171 bytes must be included in the file and should be filled with
-    0x00.
+- Offset 40: 1 byte misc. flags
+    This field is a bit field which currently contains two flags using
+    bits 0 and 1. The unused bits in this field must be set to 0.
+
+    **Bit 0** of this flag indicates if the following 171 bytes
+    contain a valid initial loader. If the bit is 0, the default
+    initial loader is assumed, but not included in the TCRT file.
+    Even if this flag is 0, the following 171 bytes must be included
+    in the file and must be filled with 0x00. If this bit is 1, the
+    following 171 bytes must contain a valid initial loader.
 
     The intent of this flag is to simplify the creation of TCRT files
     in the build process of software that is meant to be used with the
     default loader - they can just set the loader flag to 0 and do not
     need to worry about including the default loader with their
     sources just to build a valid TCRT file.
+
+    When a non-default initial loader is included in the TCRT file,
+    Bit 1 (see below) must always be set to 0.
+
+    **Bit 1** of this flag indicates if the program stored in this
+    TCRT file supports data block offsets. A TCRT-handling
+    application can safely ignore the state of this bit if it does not
+    intend to provide special support for programs that can support
+    data block offsets.
+
+    For more details about data block offset support, see the section
+    *Data Block Offset option* in the [Programmer's Reference](ProgRef.md).
+
+    A program that claims data block offset support by setting bit 1
+    may not use a custom initial loader, so bit 0 of the flag field
+    must be 0 if bit 1 is 1.
 
 - Offset 41: 171 bytes loader code  
     This is the initial loader which is used for fastload mode and can

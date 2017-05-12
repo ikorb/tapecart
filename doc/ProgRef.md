@@ -170,7 +170,9 @@ default value, the screen is turned back on and interrupts are enabled
 again. If you need to start a BASIC program with RUN instead, you can
 add a short header just before $0801 that does a few calls into the
 BASIC ROM to simulate RUN - the flashtool contains an implementation
-of this for its onefiler-writing mode.
+of this for its onefiler-writing mode. The contents of the CPU
+registers are unspecified and may change without notice, except as
+described in the section *Data Block Offset option* below.
 
 ## Command mode ##
 
@@ -684,3 +686,75 @@ up must match the name in the flash exactly.
 
 Commands from $f0 on are reserved for system functionality like
 firmware updates and will not be documented here.
+
+
+
+## Data Block Offset option ##
+
+In order to allow multiple tapecart-utilizing programs to coexist on the
+same tapecart, programs may support data block offsets. Such a program
+is able to run even if its data is not stored starting from flash
+address 0 by adding an offset to all addresses it sends to the
+tapecart.
+
+The selection of the program to start would be made by
+another application which is started by the tapecart's initial loader,
+for example a menu system allowing the user to choose from a list of
+programs available on the tapecart. Implementation details for such a
+menu system are beyond the scope of this reference, except for the
+method used to pass the correct data block offset to the program to be
+started.
+
+A program that wants to declare support for data block offsets must be
+supplied in TCRT format and it must set bit 1 of the misc. flags field
+(see the [TCRT format specification](TCRT Format.md) for
+details). Since a user may write such a program directly to a
+tapecart without the use of an additional menu program, it must be
+able to run even if no data block offset has been passed to it. This
+can easily be implemented by using a default data block offset of 0
+and replacing that with the actual offset if present.
+
+Data block offsets are always integer multiples of the erase block
+size, i.e. a multiple of 4096 byte for non-prototype tapecarts. In the
+unlikely event that a future tapecart supports erase block sizes that
+are not divisible by 256, the data block offset will be chosen so that
+it is a multiple of 256.
+
+### Checking for a data block offset ###
+
+To indicate that a data block offset should be used, the loader
+(e.g. the initial loader or a menu application) sets the Y register to
+$4f (lower-case "o" in PETSCII). The data block offset itself is
+stored in the zero-page at addresses $00fb and $00fc. If the Y
+register contains any other value, no data block offset has been
+passed and it should be assumed that the offset is 0.
+
+An application that does not support data block offsets or that does
+not need to read or write data from the tapecart at all may ignore any
+data block offset passed to it.
+
+Address $00fb in the zero-page holds the middle 8 bits of the data
+block offset and address $00fc holds the top 8 bits of the data block
+offset. The lowest 8 bits are not explicitly given anywhere, but can
+be assumed to be 0, because the offset will always be a multiple of
+256 or more.
+
+### Precautions when working with data block offsets ###
+
+You must make sure that you add the data block offset to all flash
+addresses passed to the tapecart, both for read and write
+accesses. How you do this is up to you - for example you could use
+self-modifying code to change all addresses in your code or you could
+add it before every access.
+
+Do make sure that you correctly handle the offset for write accesses -
+reading from an incorrect address will just give wrong data to
+your program, but writing to an incorrect address will corrupt other
+programs on the tapecart.
+
+For additional safety, you may want to use the CRC32_FLASH command to
+verify that the flash content starting at the current data block
+offset is actually the data you expect to be there. This could also be
+used to detect corruption caused by other programs writing to the
+wrong flash address. If you do verify your data this way, remember to
+exclude all flash pages that your program writes into.
