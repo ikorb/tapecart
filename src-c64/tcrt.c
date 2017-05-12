@@ -26,7 +26,7 @@
    SUCH DAMAGE.
 
 
-   advancedmenu.c: "Low level" cart read/write menu items
+   tcrt.c: TCRT read/write
 
 */
 
