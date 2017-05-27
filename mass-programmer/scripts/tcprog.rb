@@ -293,6 +293,14 @@ OptionParser.new do |opts|
   opts.on("-L", "--length NUM", "set initial data length") do |arg|
     data_length = arg.to_i(0)
   end
+
+  opts.on("-o", "--offset NUM", "set initial data offset") do |arg|
+    data_addr = arg.to_i(0)
+    if data_addr > 0xffff
+      puts "ERROR: Data offset must be below 0x10000"
+      exit 2
+    end
+  end
 end.parse!
 
 if ARGV.length > 1
