@@ -311,8 +311,9 @@ end
 data_file = ARGV[0] if ARGV.length == 1
 data_name = asc2pet(data_file) if data_name.nil? && !data_file.nil?
 
-$port = SerialPort.new("/dev/ttyAMA0", baud: 115200).binmode
+$port = SerialPort.new("/dev/ttyAMA0").binmode
 $port.flow_control = SerialPort::NONE
+$port.baud         = 115200
 
 # discard existing data
 $port.read_timeout = 100
