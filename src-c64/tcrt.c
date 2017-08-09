@@ -37,6 +37,7 @@
 #include "globals.h"
 #include "tapecartif.h"
 #include "tcrt.h"
+#include "io.h"
 
 const uint8_t tcrt_header[] = {
   0x74, 0x61, 0x70, 0x65,
@@ -63,13 +64,13 @@ void write_tcrt(void) {
   if (!read_string(fname, FILENAME_LENGTH, 16, 4))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 0, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
   }
 
-  bytesread = cbm_read(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
+  bytesread = tc_cbm_read(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
   if (bytesread != TCRT_OFFSET_FLASHDATA) {
     gotoxy(2, STATUS_START - 2);
     cprintf("Error: Read only %d byte from the file", len);
@@ -156,7 +157,7 @@ void write_tcrt(void) {
   cputsxy(2, STATUS_START - 2, "Write successful");
 
  fail:
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 
@@ -172,7 +173,7 @@ void dump_tcrt(void) {
   if (!read_string(fname, FILENAME_LENGTH, 16, 4))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
@@ -194,10 +195,10 @@ void dump_tcrt(void) {
 
   memcpy(databuffer + TCRT_OFFSET_FLASHLENGTH, &total_size, sizeof(total_size));
 
-  byteswritten = cbm_write(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
+  byteswritten = tc_cbm_write(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
   if (byteswritten != TCRT_OFFSET_FLASHDATA) {
     cputsxy(2, STATUS_START - 2, "Failed to write to file");
-    cbm_close(CBM_LFN);
+    tc_cbm_close(CBM_LFN);
     return;
   }
 
