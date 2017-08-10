@@ -349,11 +349,7 @@ int main(void) {
 
   display_devicenum();
 
-  if (!tapecart_cmdmode()) {
-    gotoxy(0, 3);
-    cprintf("Error: Tapecart not detected.\n");
-    return 0;
-  }
+  tapecart_cmdmode();
 
   while (1) {
     display_status();

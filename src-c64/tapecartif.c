@@ -53,9 +53,6 @@
 
 #define MOTOR_FLAG (*(unsigned char *) 0xc0)
 
-#define SENSE_LOOP_TIMEOUT 30000
-#define PULSE_LOOP_TIMEOUT 1000
-
 /* note: "state" is the state of the tape port line, not the CPU bit */
 static void cpuport_motor_on(void) {
   CPUPORT &= ~CPUPORT_nMOTOR;
@@ -199,10 +196,9 @@ uint16_t tapecart_get_u16(void) {
   return val;
 }
 
-bool tapecart_cmdmode(void) {
+void tapecart_cmdmode(void) {
   uint16_t cmdcode = TAPECART_CMDMODE_MAGIC;
   unsigned char i;
-  unsigned int timeout;
 
   /* ensure the cart is in stream mode */
   cpuport_write_low();
@@ -211,12 +207,7 @@ bool tapecart_cmdmode(void) {
   minidelay();
 
   /* wait until sense is low */
-  timeout = SENSE_LOOP_TIMEOUT;
-  while (timeout > 0 && (CPUPORT & CPUPORT_SENSE))
-    --timeout;
-
-  if (timeout == 0)
-    return false;
+  while (CPUPORT & CPUPORT_SENSE) ;
 
   /* send unlock sequence - needs ~70 ms */
   cpuport_motor_off();
@@ -237,22 +228,13 @@ bool tapecart_cmdmode(void) {
   cpuport_write_high();
 
   /* wait until sense is high */
-  timeout = SENSE_LOOP_TIMEOUT;
-  while (timeout > 0 && !(CPUPORT & CPUPORT_SENSE))
-    --timeout;
-  if (timeout == 0)
-    return false;
+  while (!(CPUPORT & CPUPORT_SENSE)) ;
 
   /* wait for 100 pulses on read */
   minidelay();
   for (i = 0; i < 100; ++i) {
     dummy_variable = CIA1.icr;
-    timeout = PULSE_LOOP_TIMEOUT;
-    while (timeout > 0 && !(CIA1.icr & CIA_ICR_FLAG))
-      --timeout;
-
-    if (timeout == 0)
-      return false;
+    while (!(CIA1.icr & CIA_ICR_FLAG)) ;
   }
 
   cpuport_write_low();
@@ -261,8 +243,6 @@ bool tapecart_cmdmode(void) {
   MOTOR_FLAG = 1;
 
   CLI();
-
-  return true;
 }
 
 void tapecart_streammode(void) {
