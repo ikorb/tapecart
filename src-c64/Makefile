@@ -35,6 +35,8 @@ CFLAGS  := -Oi -DVERSION=\"$(VERSION)\"
 ASFLAGS :=
 SYSTEM  := c64
 
+LIBPATH :=
+
 # Enable verbose compilation with "make V=1"
 ifdef V
  Q :=
@@ -44,7 +46,7 @@ else
  E := @echo
 endif
 
-FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c
+FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c
 FLASHTOOL_ASRC := minidelay.s getbyte_fast.s
 
 # calculate object file names
@@ -55,7 +57,7 @@ all: loader.bin flashtool.prg
 
 flashtool.prg: $(FLASHTOOL_OBJ)
 	$(E) "  LINK   $@"
-	$(Q)ld65 -o $@ -t $(SYSTEM) $^ $(SYSTEM).lib
+	$(Q)ld65 -o $@ -t $(SYSTEM) $^ $(LIBPATH)/$(SYSTEM).lib
 
 %.s: %.c
 	$(E) "  CC     $<"

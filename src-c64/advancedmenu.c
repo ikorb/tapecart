@@ -39,6 +39,7 @@
 #include "globals.h"
 #include "tapecartif.h"
 #include "advancedmenu.h"
+#include "io.h"
 
 int  byteswritten;
 long bytesread;
@@ -63,7 +64,7 @@ static void write_datafile(void) {
   if (!read_string(fname, FILENAME_LENGTH, 15, 5))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 3, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 3, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open data file");
     return;
@@ -76,7 +77,7 @@ static void write_datafile(void) {
   cputsxy(2, STATUS_START - 2, "Write successful");
   cputsxy(2, STATUS_START - 1, "Remember to set data start+length!");
 
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 
@@ -110,7 +111,7 @@ void dump_flash_to_file(void) {
     tapecart_read_flash_fast(flash_offset, bytesread, databuffer);
     bordercolor(++i);
 
-    byteswritten = cbm_write(CBM_LFN, databuffer, bytesread);
+    byteswritten = tc_cbm_write(CBM_LFN, databuffer, bytesread);
     if (byteswritten != bytesread) {
       cputsxy(2, STATUS_START - 2, "Failed to write to file");
       goto fail;
@@ -124,7 +125,7 @@ void dump_flash_to_file(void) {
  fail:
   VIC.ctrl1 |= (1 << 4); // un-blank screen
   bordercolor(COLOR_GRAY1);
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 
@@ -139,7 +140,7 @@ static void dump_flash(void) {
   if (!read_string(fname, FILENAME_LENGTH, 16, 5))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
@@ -167,7 +168,7 @@ static void write_custom_loader(void) {
   if (!read_string(fname, FILENAME_LENGTH, 12, 4))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 4, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 4, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open loader file");
     return;
@@ -175,7 +176,7 @@ static void write_custom_loader(void) {
 
   cputsxy(2, 6, "Writing...");
 
-  len = cbm_read(CBM_LFN, databuffer, LOADER_LENGTH + 2);
+  len = tc_cbm_read(CBM_LFN, databuffer, LOADER_LENGTH + 2);
   if (len != LOADER_LENGTH + 2) {
     gotoxy(2, STATUS_START - 2);
     cprintf("Error: Read only %d byte from the file", len);
@@ -187,7 +188,7 @@ static void write_custom_loader(void) {
   cputsxy(2, STATUS_START - 2, "Loader updated");
 
  fail:
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 
@@ -199,7 +200,7 @@ static void dump_loader(void) {
   if (!read_string(fname, FILENAME_LENGTH, 16, 5))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 1, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
@@ -209,13 +210,13 @@ static void dump_loader(void) {
   databuffer[0] = 0x51;
   databuffer[1] = 0x03;
 
-  byteswritten = cbm_write(CBM_LFN, databuffer, LOADER_LENGTH + 2);
+  byteswritten = tc_cbm_write(CBM_LFN, databuffer, LOADER_LENGTH + 2);
   if (byteswritten != LOADER_LENGTH + 2) {
     cputsxy(2, STATUS_START - 2, "Failed to write file");
   } else {
     cputsxy(2, STATUS_START - 2, "Dump successful");
   }
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 

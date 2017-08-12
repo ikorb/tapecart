@@ -44,6 +44,7 @@
 #include "globals.h"
 #include "tapecartif.h"
 #include "tcrt.h"
+#include "io.h"
 
 const uint8_t default_loader[LOADER_LENGTH] = {
   #include "loader.h"
@@ -155,7 +156,7 @@ bool write_file(long limit) {
     if (limit >= 0 && to_read > limit)
       to_read = limit;
 
-    len = cbm_read(CBM_LFN, databuffer, to_read);
+    len = tc_cbm_read(CBM_LFN, databuffer, to_read);
 
     if (len > 0) {
       if (erase_pages && pages_erased == 0) {
@@ -197,13 +198,13 @@ static void write_onefiler(void) {
   if (!read_string(fname, FILENAME_LENGTH, 16, 4))
     return;
 
-  res = cbm_open(CBM_LFN, current_device, 0, fname);
+  res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open data file");
     return;
   }
 
-  len = cbm_read(CBM_LFN, &loadaddr, 2);
+  len = tc_cbm_read(CBM_LFN, &loadaddr, 2);
   if (len != 2) {
     cputsxy(2, STATUS_START - 2, "Failed to read load address");
     goto fail;
@@ -255,7 +256,7 @@ static void write_onefiler(void) {
   }
 
   /* read remainder of first block into buffer */
-  len = cbm_read(CBM_LFN, databuffer + flash_offset, page_size - flash_offset);
+  len = tc_cbm_read(CBM_LFN, databuffer + flash_offset, page_size - flash_offset);
 
   /* write it */
   gotoxy(0, 9);
@@ -278,7 +279,7 @@ static void write_onefiler(void) {
   cputsxy(2, STATUS_START - 2, "Write successful");
 
  fail:
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 
@@ -348,11 +349,7 @@ int main(void) {
 
   display_devicenum();
 
-  if (!tapecart_cmdmode()) {
-    gotoxy(0, 3);
-    cprintf("Error: Tapecart not detected.\n");
-    return 0;
-  }
+  tapecart_cmdmode();
 
   while (1) {
     display_status();
