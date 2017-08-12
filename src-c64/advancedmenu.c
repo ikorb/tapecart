@@ -188,7 +188,7 @@ static void write_custom_loader(void) {
   cputsxy(2, STATUS_START - 2, "Loader updated");
 
  fail:
-  cbm_close(CBM_LFN);
+  tc_cbm_close(CBM_LFN);
 }
 
 

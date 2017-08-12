@@ -43,15 +43,26 @@ unsigned long int reufilepos;
 
 
 /* Copy 'size' bytes from REU memory starting at page 'page' offset 'offset' to 'dst' */
-void transferFromReu(short int page, char offset, unsigned short int size, void * dst)
+void transferFromReu(unsigned long int src, unsigned short int size, void * dst)
 {
    *(unsigned short *) (0xdf02) = (unsigned short) dst;
-   *(unsigned char *) (0xdf04)  = offset;
-   *(unsigned short *) (0xdf05) = page;
+   *(unsigned long *) (0xdf04)  = src;
    *(unsigned short *) (0xdf07) = size;
    *(unsigned char *) (0xdf09)  = 0;
    *(unsigned char *) (0xdf0a)  = 0;
    *(unsigned char *) (0xdf01)  = 253;
+   
+   if ((src / 0x80000) != ((src+size-1) / 0x80000))
+   {
+      unsigned long int offset = 0x80000 - src % 0x80000;
+      
+      *(unsigned short *) (0xdf02) = ((unsigned short) dst) + offset;
+      *(unsigned long *) (0xdf04)  = src + offset;
+      *(unsigned short *) (0xdf07) = size - offset;
+      *(unsigned char *) (0xdf09)  = 0;
+      *(unsigned char *) (0xdf0a)  = 0;
+      *(unsigned char *) (0xdf01)  = 253;
+   }
 }
 
 /* cbm_open wrapper with reu support, use "r:" as filename to access reu */
@@ -67,7 +78,7 @@ unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device, 
       reuLfn     = lfn;
       reufilepos = 0;
 
-      transferFromReu(0, 0, 4, &reuSize);
+      transferFromReu(0, 4, &reuSize);
 
       return 0;
    }
@@ -93,16 +104,10 @@ void __fastcall__ tc_cbm_close(unsigned char lfn)
 /* cbm_read wrapper with reu support */
 int __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer, unsigned int size)
 {
-   unsigned long int page;
-   unsigned short    idx;
-
    if (lfn != reuLfn)
    {
       return cbm_read(lfn, buffer, size);
    }
-
-   page = (reufilepos + 4) >> 8;
-   idx  = (reufilepos + 4) & 0xff;
 
    if (size > reuSize - reufilepos)
    {
@@ -114,7 +119,7 @@ int __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer, unsigned int size
       return 0;
    }
 
-   transferFromReu(page, idx, size, buffer);
+   transferFromReu(reufilepos+4, size, buffer);
 
    reufilepos += size;
 
