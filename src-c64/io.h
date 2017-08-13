@@ -24,20 +24,21 @@
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
 
-   io.c: wrappr code for cbm_* functions for accesing reu and normal cbm devices
-         treating the reu content as single file where the 1st four bytes containing
-	 the file size
+   io.c: cbm_* wrapper functions with read-only REU support
+
 */
 
 /* cbm_open wrapper with reu support, use "r:" as filename to access reu */
 
-unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device, unsigned char sec_addr, const char * name);
+#ifndef IO_H
+#define IO_H
 
-/* cbm_close wrapper with reu support */
-void __fastcall__ tc_cbm_close(unsigned char lfn);
+unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
+                                       unsigned char sec_addr, const char * name);
+void          __fastcall__ tc_cbm_close(unsigned char lfn);
+int           __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer,
+                                       unsigned int size);
+int           __fastcall__ tc_cbm_write(unsigned char lfn, const void * buffer,
+                                        unsigned int size);
 
-/* cbm_read wrapper with reu support */
-int __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer, unsigned int size);
-
-/* cbm_write with reu support - without reu write support */
-int __fastcall__ tc_cbm_write(unsigned char lfn, const void * buffer, unsigned int size);
+#endif

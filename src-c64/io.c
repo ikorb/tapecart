@@ -24,115 +24,102 @@
    OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
    SUCH DAMAGE.
 
+   io.c: cbm_* wrapper functions with read-only REU support
 
-   io.c: wrappr code for cbm_* functions for accesing reu and normal cbm devices
-         treating the reu content as single file where the 1st four bytes containing
-	 the file size
+   Note: First four bytes of the REU are assumed to contain the file size.
 */
 
-
-
-#include "io.h"
 #include <conio.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "io.h"
 
-signed char       reuLfn = -1;
-unsigned long int reuSize;
-unsigned long int reufilepos;
+static signed char   reuLfn = -1;
+static unsigned long reuSize;
+static unsigned long reufilepos;
+
+#define MAGIC_REU_FILENAME "r:"
 
 
 /* Copy 'size' bytes from REU memory starting at page 'page' offset 'offset' to 'dst' */
-void transferFromReu(unsigned long int src, unsigned short int size, void * dst)
-{
-   *(unsigned short *) (0xdf02) = (unsigned short) dst;
-   *(unsigned long *) (0xdf04)  = src;
-   *(unsigned short *) (0xdf07) = size;
-   *(unsigned char *) (0xdf09)  = 0;
-   *(unsigned char *) (0xdf0a)  = 0;
-   *(unsigned char *) (0xdf01)  = 253;
-   
-   if ((src / 0x80000) != ((src+size-1) / 0x80000))
-   {
-      unsigned long int offset = 0x80000 - src % 0x80000;
-      
-      *(unsigned short *) (0xdf02) = ((unsigned short) dst) + offset;
-      *(unsigned long *) (0xdf04)  = src + offset;
-      *(unsigned short *) (0xdf07) = size - offset;
-      *(unsigned char *) (0xdf09)  = 0;
-      *(unsigned char *) (0xdf0a)  = 0;
-      *(unsigned char *) (0xdf01)  = 253;
-   }
+static void transfer_from_reu(unsigned long src, unsigned short int size, void *dst) {
+  /* FIXME: Use an I/O port struct for the REU registers */
+  *(uint16_t *) (0xdf02) = (uint16_t) dst;
+  *(uint32_t *) (0xdf04) = src; // FIXME: This clobbers transfer length low
+  *(uint16_t *) (0xdf07) = size;
+  *(uint8_t  *) (0xdf09) = 0;
+  *(uint8_t  *) (0xdf0a) = 0;
+  *(uint8_t  *) (0xdf01) = 253;
+
+  /* re-transfer second part of data if the block crosses a 512K boundary */
+  if ((src / 0x80000) != ((src+size-1) / 0x80000)) {
+    unsigned long offset = 0x80000 - src % 0x80000;
+
+    *(uint16_t *) (0xdf02) = ((uint16_t) dst) + offset;
+    *(uint32_t *) (0xdf04) = src + offset; // FIXME: This clobbers transfer length low
+    *(uint16_t *) (0xdf07) = size - offset;
+    *(uint8_t  *) (0xdf09) = 0;
+    *(uint8_t  *) (0xdf0a) = 0;
+    *(uint8_t  *) (0xdf01) = 253;
+  }
 }
 
 /* cbm_open wrapper with reu support, use "r:" as filename to access reu */
-unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device, unsigned char sec_addr, const char * name)
-{
-   if ( !strcmp(name, "r:"))
-   {
-      if (reuLfn != -1)
-      {
-         return 1;
-      }
+unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
+                                       unsigned char sec_addr, const char *name) {
+  if (!strcmp(name, MAGIC_REU_FILENAME)) {
+    if (reuLfn != -1) {
+      return 1;
+    }
 
-      reuLfn     = lfn;
-      reufilepos = 0;
+    reuLfn     = lfn;
+    reufilepos = 0;
 
-      transferFromReu(0, 4, &reuSize);
+    transfer_from_reu(0, 4, &reuSize);
 
-      return 0;
-   }
-   else
-   {
-      return cbm_open(lfn, device, sec_addr, name);
-   }
+    return 0;
+  } else {
+    return cbm_open(lfn, device, sec_addr, name);
+  }
 }
 
 /* cbm_close wrapper with reu support */
-void __fastcall__ tc_cbm_close(unsigned char lfn)
-{
-   if (lfn == reuLfn)
-   {
-      reuLfn = -1;
-   }
-   else
-   {
-      cbm_close(lfn);
-   }
+void __fastcall__ tc_cbm_close(unsigned char lfn) {
+  if (lfn == reuLfn) {
+    reuLfn = -1;
+  } else {
+    cbm_close(lfn);
+  }
 }
 
 /* cbm_read wrapper with reu support */
-int __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer, unsigned int size)
-{
-   if (lfn != reuLfn)
-   {
-      return cbm_read(lfn, buffer, size);
-   }
+int __fastcall__ tc_cbm_read(unsigned char lfn, void *buffer, unsigned int size) {
+  if (lfn != reuLfn) {
+    return cbm_read(lfn, buffer, size);
+  }
 
-   if (size > reuSize - reufilepos)
-   {
-      size = reuSize - reufilepos;
-   }
+  if (size > reuSize - reufilepos) {
+    size = reuSize - reufilepos;
+  }
 
-   if ( !size)
-   {
-      return 0;
-   }
+  if (!size) {
+    return 0;
+  }
 
-   transferFromReu(reufilepos+4, size, buffer);
+  transfer_from_reu(reufilepos + 4, size, buffer);
 
-   reufilepos += size;
+  reufilepos += size;
 
-   return size;
+  return size;
 }
 
 /* cbm_write with reu support - without reu write support */
-int __fastcall__ tc_cbm_write(unsigned char lfn, const void * buffer, unsigned int size)
-{
-   if (lfn != reuLfn)
-   {
-      return cbm_write(lfn, buffer, size);
-   }
+int __fastcall__ tc_cbm_write(unsigned char lfn, const void *buffer,
+                              unsigned int size) {
+  if (lfn != reuLfn) {
+    return cbm_write(lfn, buffer, size);
+  }
 
-   return 0;
+  return 0;
 }
