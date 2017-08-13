@@ -41,13 +41,6 @@
 
 bool input_aborted;
 
-static unsigned char __fastcall__ min(unsigned char a, unsigned char b) {
-  if (a < b)
-    return a;
-  else
-    return b;
-}
-
 static unsigned char cputsnxy(const unsigned char xpos, const unsigned char ypos,
                               unsigned char len, const char *str) {
   unsigned char printed = 0;
@@ -69,16 +62,31 @@ bool read_string(char *buffer, unsigned char maxlen,
   unsigned char i;
   char ch;
   char curs_state;
-  
+
   curs_state = cursor(1);
-  strpos = strlen(buffer);
-  screenpos = min(displaylen, strpos);
-  if (strpos > displaylen) {
-    cputsxy(xpos, ypos, buffer + strpos - displaylen);
-  } else {
+
+  /* display tail part of string */
+  /* FIXME: copy-and-paste below in KEY_CLR, */
+  /* should be merged, but needs access to many local vars */
+  strpos    = strlen(buffer);
+  screenpos = strpos;
+  if (strpos < displaylen) {
+    /* entire string fits with one space to spare */
     cputsxy(xpos, ypos, buffer);
+  } else {
+    /* check if there should be a free space at the end */
+    if (strpos == maxlen) {
+      /* no space */
+      screenpos = displaylen;
+      cputsnxy(xpos, ypos, displaylen, buffer + strpos - displaylen);
+    } else {
+      /* leave one space */
+      screenpos = displaylen - 1;
+      cputsnxy(xpos, ypos, displaylen - 1, buffer + strpos - displaylen + 1);
+      cputc(' ');
+      gotoxy(xpos + screenpos, ypos);
+    }
   }
-  gotoxy(xpos + screenpos, ypos);
 
   while (1) {
     ch = cgetc();
@@ -156,6 +164,41 @@ bool read_string(char *buffer, unsigned char maxlen,
             cputc(' ');
 
           gotoxy(xpos + screenpos, ypos);
+        }
+        break;
+
+      case KEY_HOME:
+        strpos = 0;
+        screenpos = 0;
+
+        /* re-draw start of string */
+        i = cputsnxy(xpos, ypos, displaylen, buffer);
+        for (; i < displaylen; ++i)
+          cputc(' ');
+
+        gotoxy(xpos, ypos);
+        break;
+
+      case KEY_CLR: /* move to end of string */
+        /* FIXME: copy-and-paste from init of this function */
+        strpos    = strlen(buffer);
+        screenpos = strpos;
+        if (strpos < displaylen) {
+          /* entire string fits with one space to spare */
+          cputsxy(xpos, ypos, buffer);
+        } else {
+          /* check if we need a space at the end */
+          if (strpos == maxlen) {
+            /* no space */
+            screenpos = displaylen;
+            cputsnxy(xpos, ypos, displaylen, buffer + strpos - displaylen);
+          } else {
+            /* leave one space */
+            screenpos = displaylen - 1;
+            cputsnxy(xpos, ypos, displaylen - 1, buffer + strpos - displaylen + 1);
+            cputc(' ');
+            gotoxy(xpos + screenpos, ypos);
+          }
         }
         break;
       }

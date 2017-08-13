@@ -44,6 +44,8 @@
 #define KEY_RIGHT  0x1d
 #define KEY_RETURN 0x0d
 #define KEY_STOP   0x03
+#define KEY_HOME   0x13
+#define KEY_CLR    0x93
 
 #define STATUS_START 18
 
