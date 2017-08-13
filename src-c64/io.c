@@ -32,14 +32,11 @@
 #include <conio.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include "io.h"
 
 static signed char   reuLfn = -1;
 static unsigned long reuSize;
 static unsigned long reufilepos;
-
-#define MAGIC_REU_FILENAME "r:"
 
 
 /* Copy 'size' bytes from REU memory starting at page 'page' offset 'offset' to 'dst' */
@@ -68,7 +65,9 @@ static void transfer_from_reu(unsigned long src, unsigned short int size, void *
 /* cbm_open wrapper with reu support, use "r:" as filename to access reu */
 unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
                                        unsigned char sec_addr, const char *name) {
-  if (!strcmp(name, MAGIC_REU_FILENAME)) {
+  if (device) {
+    return cbm_open(lfn, device, sec_addr, name);
+  } else {
     if (reuLfn != -1) {
       return 1;
     }
@@ -79,8 +78,6 @@ unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
     transfer_from_reu(0, 4, &reuSize);
 
     return 0;
-  } else {
-    return cbm_open(lfn, device, sec_addr, name);
   }
 }
 

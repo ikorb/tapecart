@@ -43,18 +43,25 @@ static void change_device(void) {
   unsigned char newdevice = current_device;
   
   cputsxy(9, 2, "Change current device");
+  cputsxy(0, 10, "Enter 0 to select REU");
+
   cputsxy(0, 4, "Device number: [  ]");
   do {
     newdevice = read_uint(newdevice, false, 2, 16, 4);
     if (input_aborted)
       return;
-  } while (newdevice < 4 || newdevice > 30);
+  } while ((newdevice != 0 && newdevice < 4) || newdevice > 30);
 
   current_device = newdevice;
   display_devicenum();
 }
 
 static void send_command(void) {
+  if (current_device == 0) {
+    cputsxy(2, STATUS_START - 2, "Cannot send commands to a REU!");
+    return;
+  }
+
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
   cputsxy(14, 2, "Send command");
   //             0123456789012345678901234567890123456789

@@ -141,9 +141,12 @@ void display_status(void) {
 
 
 void display_devicenum(void) {
-  chlinexy(0, STATUS_START, 40);
   gotoxy(27, STATUS_START);
-  cprintf("\0263Device: %02d\0253", current_device);
+  if (current_device) {
+    cprintf("\0263Device: %02d\0253", current_device);
+  } else {
+    cprintf("\0263Device:REU\0253");
+  }
 }
 
 
@@ -347,6 +350,7 @@ int main(void) {
   clrscr();
   cputs("tapecart-tool v" VERSION " by Ingo Korb");
   chlinexy(0, 1, 40);
+  chlinexy(0, STATUS_START, 40);
   clear_mainarea_full();
 
   display_devicenum();
