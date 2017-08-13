@@ -52,7 +52,7 @@ static void hexdump_flash(void) {
   /* dump data to screen */
   clear_mainarea();
   gotoxy(0, 2);
-  tapecart_read_flash(0, 128, databuffer);
+  tapecart_read_flash(flash_offset, 128, databuffer);
   for (i = 0; i < 128; i++) {
     cprintf("%02x ", databuffer[i]);
     if ((i & 7) == 7)
