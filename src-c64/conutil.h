@@ -50,7 +50,8 @@
 extern bool input_aborted;
 
 bool read_string(char *buffer, unsigned char maxlen,
-                 unsigned char xpos, unsigned char ypos);
+                 unsigned char xpos, unsigned char ypos,
+                 unsigned char displaylen);
 uint32_t read_uint(uint32_t preset, unsigned char width,
                    unsigned char xpos, unsigned char ypos);
 unsigned char show_menu(unsigned char count, const char **items, unsigned char sel,

@@ -37,8 +37,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "tapecartif.h" // for FILENAME_LENGTH
+#include "tapecartif.h" // for LOADER_LENGTH
 
+#define FILENAME_BUFFER_LENGTH 255
 #define CBM_LFN 1
 
 /* from flashtool.c */
@@ -49,7 +50,7 @@ extern uint32_t total_size;
 extern uint16_t page_size;
 extern uint16_t erase_pages;
 
-extern char fname[FILENAME_LENGTH + 1];
+extern char fname[FILENAME_BUFFER_LENGTH];
 extern char strbuf[16];
 
 extern unsigned char current_device;

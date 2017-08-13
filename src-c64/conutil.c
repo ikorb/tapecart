@@ -41,40 +41,91 @@
 
 bool input_aborted;
 
+static unsigned char __fastcall__ min(unsigned char a, unsigned char b) {
+  if (a < b)
+    return a;
+  else
+    return b;
+}
+
+static unsigned char cputsnxy(const unsigned char xpos, const unsigned char ypos,
+                              unsigned char len, const char *str) {
+  unsigned char printed = 0;
+
+  gotoxy(xpos, ypos);
+  while (len-- && *str) {
+    cputc(*str++);
+    ++printed;
+  }
+
+  return printed;
+}
+
 bool read_string(char *buffer, unsigned char maxlen,
-                 unsigned char xpos, unsigned char ypos) {
-  unsigned char pos;
+                 unsigned char xpos, unsigned char ypos,
+                 unsigned char displaylen) {
+  unsigned char strpos;
+  int screenpos;
   unsigned char i;
   char ch;
   char curs_state;
   
   curs_state = cursor(1);
-  cputsxy(xpos, ypos, buffer);
-  pos = strlen(buffer);
-  gotoxy(xpos + pos, ypos);
+  strpos = strlen(buffer);
+  screenpos = min(displaylen, strpos);
+  if (strpos > displaylen) {
+    cputsxy(xpos, ypos, buffer + strpos - displaylen);
+  } else {
+    cputsxy(xpos, ypos, buffer);
+  }
+  gotoxy(xpos + screenpos, ypos);
 
   while (1) {
     ch = cgetc();
+
     if (isprint(ch)) {
       /* add to string if possible */
-      if (pos < maxlen) {
-        buffer[pos] = ch;
-        pos++;
-        cputc(ch);
+      if (strpos < maxlen) {
+        buffer[strpos] = ch;
+        ++strpos;
+        ++screenpos;
+        if (screenpos < displaylen || strpos == maxlen) {
+          cputc(ch);
+        } else {
+          /* need to scroll the field */
+          screenpos--;
+          cputsnxy(xpos, ypos, displaylen, buffer + strpos - screenpos);
+          cputc(' ');
+          gotoxy(xpos + displaylen - 1, ypos);
+        }
       }
     } else {
       switch (ch) {
       case KEY_LEFT:
-        if (pos > 0) {
-          --pos;
-          gotoxy(xpos + pos, ypos);
+        if (strpos > 0) {
+          --strpos;
+          --screenpos;
+          if (screenpos < 0) {
+            /* at left edge of field, scroll */
+            screenpos = 0;
+            cputsnxy(xpos, ypos, displaylen, buffer + strpos);
+          }
+          gotoxy(xpos + screenpos, ypos);
         }
         break;
 
       case KEY_RIGHT:
-        if (pos < maxlen && buffer[pos] != 0) {
-          ++pos;
-          gotoxy(xpos + pos, ypos);
+        if (strpos < maxlen && buffer[strpos] != 0) {
+          ++strpos;
+          ++screenpos;
+          if (screenpos >= displaylen && strpos < maxlen) {
+            /* at right edge, scroll */
+            screenpos = displaylen - 1;
+            if (cputsnxy(xpos, ypos, displaylen, buffer + strpos - screenpos) < displaylen) {
+              cputc(' ');
+            }
+          }
+          gotoxy(xpos + screenpos, ypos);
         }
         break;
 
@@ -89,18 +140,22 @@ bool read_string(char *buffer, unsigned char maxlen,
         return false;
 
       case KEY_DEL:
-        if (pos > 0) {
-          gotoxy(xpos + pos - 1, ypos);
+        if (strpos > 0) {
           /* move remainder of string back one char */
-          for (i = pos; i <= maxlen; ++i) {
+          for (i = strpos; i <= maxlen; ++i) {
             buffer[i-1] = buffer[i];
-            if (buffer[i])
-              cputc(buffer[i]);
-            else
-              cputc(' ');
           }
-          --pos;
-          gotoxy(xpos + pos, ypos);
+          --strpos;
+          --screenpos;
+          if (screenpos < 0)
+            screenpos = 0;
+
+          /* re-draw current substring */
+          i = cputsnxy(xpos, ypos, displaylen, buffer + strpos - screenpos);
+          for (; i < displaylen; ++i)
+            cputc(' ');
+
+          gotoxy(xpos + screenpos, ypos);
         }
         break;
       }

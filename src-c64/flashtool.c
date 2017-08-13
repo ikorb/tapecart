@@ -42,9 +42,9 @@
 #include "conutil.h"
 #include "debugmenu.h"
 #include "globals.h"
+#include "io.h"
 #include "tapecartif.h"
 #include "tcrt.h"
-#include "io.h"
 
 const uint8_t default_loader[LOADER_LENGTH] = {
   #include "loader.h"
@@ -62,7 +62,7 @@ uint32_t total_size;
 uint16_t page_size;
 uint16_t erase_pages;
 
-char fname[FILENAME_LENGTH + 1];
+char fname[FILENAME_BUFFER_LENGTH];
 char strbuf[16];
 unsigned char current_device;
 
@@ -191,11 +191,11 @@ static char ch;
 static void write_onefiler(void) {
   size_t i;
 
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
   cputsxy(13, 2, "Write onefiler");
-  //                             0123456789012345
-  cputsxy(0, 4, "File name    : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
@@ -386,7 +386,7 @@ int main(void) {
 
     case 5: // debug tools submenu
       debug_tool_menu();
-      break;  
+      break;
 
     case 6: // exit
       clrscr();

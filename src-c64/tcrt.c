@@ -35,9 +35,9 @@
 #include <string.h>
 #include "conutil.h"
 #include "globals.h"
+#include "io.h"
 #include "tapecartif.h"
 #include "tcrt.h"
-#include "io.h"
 
 const uint8_t tcrt_header[] = {
   0x74, 0x61, 0x70, 0x65,
@@ -55,13 +55,13 @@ static struct {
 static uint32_t tcrt_flashsize;
 
 void write_tcrt(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
 
   cputsxy(12, 2, "Write TCRT to cart");
 
-  //                             0123456789012345
-  cputsxy(0, 4, "File name    : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
@@ -162,15 +162,15 @@ void write_tcrt(void) {
 
 
 void dump_tcrt(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
 
   cputsxy(9, 2, "Dump cart to TCRT file");
   cputsxy(0, 10, "Note: Screen will be blanked,");
   cputsxy(6, 11, "hold RUN/STOP to abort.");
 
-  //                             0123456789012345
-  cputsxy(0, 4, "File name    : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 16, 4))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 1, fname);

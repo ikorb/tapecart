@@ -37,9 +37,9 @@
 #include <string.h>
 #include "conutil.h"
 #include "globals.h"
+#include "io.h"
 #include "tapecartif.h"
 #include "advancedmenu.h"
-#include "io.h"
 
 int  byteswritten;
 long bytesread;
@@ -58,10 +58,10 @@ static void write_datafile(void) {
             flash_offset & ~((long)page_size * erase_pages - 1L));
   }
 
-  memset(fname, 0, FILENAME_LENGTH + 1);
-  //                            0123456789012345
-  cputsxy(0, 5, "File name   : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 15, 5))
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 5, "File name   : [                        ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 15, 5, 39 - 15))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 3, fname);
@@ -130,14 +130,14 @@ void dump_flash_to_file(void) {
 
 
 static void dump_flash(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
 
   cputsxy(6, 3, "Dump flash contents to file");
   cputsxy(0, 10, "Note: Screen will be blanked,");
   cputsxy(6, 11, "hold RUN/STOP to abort.");
-  //                             0123456789012345
-  cputsxy(0, 5, "File name    : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 16, 5))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 5, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 5, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
@@ -161,11 +161,11 @@ static void write_default_loader(void) {
 
 
 static void write_custom_loader(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
   cputsxy(10, 2, "Write custom loader");
-  //                         0123456789012345
-  cputsxy(0, 4, "File name: [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 12, 4))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 4, fname);
@@ -193,11 +193,11 @@ static void write_custom_loader(void) {
 
 
 static void dump_loader(void) {
-  memset(fname, 0, FILENAME_LENGTH + 1);
+  memset(fname, 0, FILENAME_BUFFER_LENGTH);
   cputsxy(10, 3, "Dump loader to file");
-  //                             0123456789012345
-  cputsxy(0, 5, "File name    : [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 16, 5))
+  //             0123456789012345678901234567890123456789
+  cputsxy(0, 5, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 5, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
@@ -227,9 +227,9 @@ static void change_name(void) {
   tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
 
   cputsxy(10, 2, "Change display name");
-  //             0123456789012340123456789012345
+  //                            1234567890123456
   cputsxy(0, 4, "Display name: [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 15, 4))
+  if (!read_string(fname, FILENAME_LENGTH, 15, 4, FILENAME_LENGTH))
     return;
 
   if (strlen(fname) < FILENAME_LENGTH) {
