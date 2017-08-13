@@ -41,6 +41,7 @@
 #include "advancedmenu.h"
 #include "conutil.h"
 #include "debugmenu.h"
+#include "drivemenu.h"
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
@@ -139,7 +140,8 @@ void display_status(void) {
 }
 
 
-static void display_devicenum(void) {
+void display_devicenum(void) {
+  chlinexy(0, STATUS_START, 40);
   gotoxy(27, STATUS_START);
   cprintf("\0263Device: %02d\0253", current_device);
 }
@@ -237,7 +239,7 @@ static void write_onefiler(void) {
   gotoxy(0, 8);
   //       01234567890123456789
   cprintf("Start program at: [     ]");
-  calladdr = read_uint(loadaddr, 5, 19, 8);
+  calladdr = read_uint(loadaddr, true, 5, 19, 8);
   if (input_aborted)
     goto fail;
   flash_offset = 2;
@@ -329,7 +331,8 @@ static const char *main_menu[] = {
   "4. Advanced options...",
   "5. Display cart info",
   "6. Debug tools...",
-  "7. Exit",
+  "7. Drive menu...",
+  "8. Exit",
 };
 
 int main(void) {
@@ -344,7 +347,6 @@ int main(void) {
   clrscr();
   cputs("tapecart-tool v" VERSION " by Ingo Korb");
   chlinexy(0, 1, 40);
-  chlinexy(0, STATUS_START, 40);
   clear_mainarea_full();
 
   display_devicenum();
@@ -388,7 +390,11 @@ int main(void) {
       debug_tool_menu();
       break;
 
-    case 6: // exit
+    case 6: // drive submenu
+      drive_menu();
+      break;
+
+    case 7: // exit
       clrscr();
       return 0;
 

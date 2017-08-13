@@ -165,14 +165,18 @@ bool read_string(char *buffer, unsigned char maxlen,
 
 static char hexbuffer[12];
 
-uint32_t read_uint(uint32_t preset, unsigned char width,
+uint32_t read_uint(uint32_t preset, bool hex, unsigned char width,
                    unsigned char xpos, unsigned char ypos) {
   unsigned char pos;
   char ch;
   char curs_state;
 
   curs_state = cursor(1);
-  sprintf(hexbuffer, "$%0*lx", width - 1, preset);
+  if (hex) {
+    sprintf(hexbuffer, "$%0*lx", width - 1, preset);
+  } else {
+    sprintf(hexbuffer, "%0*ld", width, preset);
+  }
   cputsxy(xpos, ypos, hexbuffer);
   pos = 1;
   gotoxy(xpos + pos, ypos);

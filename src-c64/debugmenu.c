@@ -45,7 +45,7 @@ static void hexdump_flash(void) {
   /* ask for start address */
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
-  flash_offset = read_uint(0, 7, 15, 4);
+  flash_offset = read_uint(0, true, 7, 15, 4);
   if (input_aborted)
     return;
 
@@ -72,10 +72,10 @@ static void crc32_flash(void) {
   cputsxy(9, 2, "Calculate flash CRC32");
   cputsxy(0, 4, "Flash offset: [       ]");
   cputsxy(0, 5, "Length      : [       ]");
-  flash_offset = read_uint(0, 7, 15, 4);
+  flash_offset = read_uint(0, true, 7, 15, 4);
   if (input_aborted)
     return;
-  data_length  = read_uint(total_size - 1, 7, 15, 5);
+  data_length  = read_uint(total_size - 1, true, 7, 15, 5);
   if (input_aborted)
     return;
 
@@ -101,7 +101,7 @@ static void set_debugflags(void) {
   gotoxy(0, 4);
   //       012345678901234
   cprintf("Debug flags: [     ]");
-  debugflags = read_uint(debugflags, 5, 14, 4);
+  debugflags = read_uint(debugflags, true, 5, 14, 4);
   if (input_aborted)
     return;
 

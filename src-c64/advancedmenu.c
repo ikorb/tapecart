@@ -48,7 +48,7 @@ static void write_datafile(void) {
   cputsxy(13, 2, "Write data file");
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
-  flash_offset = read_uint(0, 7, 15, 4);
+  flash_offset = read_uint(0, true, 7, 15, 4);
   if (input_aborted)
     return;
 
@@ -255,13 +255,13 @@ static void change_bootloc(void) {
   gotoxy(0, 6);
   cprintf("Call address: [$%04x]", calladdr);
 
-  dataofs  = read_uint(dataofs,  5, 15, 4);
+  dataofs  = read_uint(dataofs, true, 5, 15, 4);
   if (input_aborted)
     return;
-  datalen  = read_uint(datalen,  5, 15, 5);
+  datalen  = read_uint(datalen, true, 5, 15, 5);
   if (input_aborted)
     return;
-  calladdr = read_uint(calladdr, 5, 15, 6);
+  calladdr = read_uint(calladdr, true, 5, 15, 6);
   if (input_aborted)
     return;
 

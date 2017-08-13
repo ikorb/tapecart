@@ -26,49 +26,13 @@
    SUCH DAMAGE.
 
 
-   globals.h: Declaration of global variables
-
-   (yucky, but better for code efficiency in cc65)
+   drivemenu.h: Drive-related menu items
 
 */
 
-#ifndef GLOBALS_H
-#define GLOBALS_H
+#ifndef DRIVEMENU_H
+#define DRIVEMENU_H
 
-#include <stdbool.h>
-#include <stdint.h>
-#include "tapecartif.h" // for LOADER_LENGTH
-
-#define FILENAME_BUFFER_LENGTH 255
-#define CBM_LFN 1
-
-/* from flashtool.c */
-extern const uint8_t default_loader[LOADER_LENGTH];
-
-extern uint8_t  databuffer[4096];
-extern uint32_t total_size;
-extern uint16_t page_size;
-extern uint16_t erase_pages;
-
-extern char fname[FILENAME_BUFFER_LENGTH];
-extern char strbuf[16];
-
-extern unsigned char current_device;
-
-extern long          flash_offset;
-extern uint16_t      flash_page, pages_erased;
-extern size_t        len;
-extern unsigned char res;
-
-void display_status(void);
-void display_devicenum(void);
-bool write_file(long limit);
-
-
-/* from advancedmenu.c */
-extern int  byteswritten;
-extern long bytesread;
-
-void dump_flash_to_file(void);
+void drive_menu(void);
 
 #endif
