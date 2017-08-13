@@ -132,12 +132,12 @@ void dump_flash_to_file(void) {
 static void dump_flash(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
 
-  cputsxy(6, 3, "Dump flash contents to file");
+  cputsxy(6, 2, "Dump flash contents to file");
   cputsxy(0, 10, "Note: Screen will be blanked,");
   cputsxy(6, 11, "hold RUN/STOP to abort.");
   //             0123456789012345678901234567890123456789
-  cputsxy(0, 5, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 5, 39 - 12))
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
@@ -194,10 +194,10 @@ static void write_custom_loader(void) {
 
 static void dump_loader(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  cputsxy(10, 3, "Dump loader to file");
+  cputsxy(10, 2, "Dump loader to file");
   //             0123456789012345678901234567890123456789
-  cputsxy(0, 5, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 5, 39 - 12))
+  cputsxy(0, 4, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
   res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
