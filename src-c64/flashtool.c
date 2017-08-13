@@ -323,8 +323,8 @@ static void display_cartinfo(void) {
 /*** main ***/
 
 static const char *main_menu[] = {
-  "1. Write onefiler to cart",
-  "2. Write TCRT file to cart",
+  "1. Write TCRT file to cart",
+  "2. Write onefiler to cart",
   "3. Dump cart to TCRT file",
   "4. Advanced options...",
   "5. Display cart info",
@@ -364,12 +364,12 @@ int main(void) {
     clear_mainarea_full();
 
     switch (res) {
-    case 0: // write onefiler
-      write_onefiler();
+    case 0: // write TCRT
+      write_tcrt();
       break;
 
-    case 1: // write TCRT
-      write_tcrt();
+    case 1: // write onefiler
+      write_onefiler();
       break;
 
     case 2: // dump to TCRT
