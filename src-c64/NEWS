@@ -1,0 +1,10 @@
+Notable changes in flashtool:
+=============================
+Version 1.2:
+- support reading data from a REU instead of disk
+- add a minimal drive menu to send commands and
+  change the current device number
+- accept longer file names (up to 254 chars)
+- actually use the offset in the hexdump menu option
+- use a timeout to detect if no tapecart is connected
+- minor changes to increase visual consistency of menus
