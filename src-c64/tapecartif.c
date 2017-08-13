@@ -54,7 +54,7 @@
 #define MOTOR_FLAG (*(unsigned char *) 0xc0)
 
 #define SENSE_LOOP_TIMEOUT 30000
-#define PULSE_LOOP_TIMEOUT 1000
+#define PULSE_LOOP_TIMEOUT 10000
 
 /* note: "state" is the state of the tape port line, not the CPU bit */
 static void cpuport_motor_on(void) {
