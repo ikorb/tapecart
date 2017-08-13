@@ -431,7 +431,7 @@ rdyloop:
         and #$18                ; 2 - mask
         lsr                     ; 2 - shift down
         lsr                     ; 2
-        eor $01                 ; 3 - read bits 7+6 (EOR invertes 5+4!)
+        eor $01                 ; 3 - read bits 7+6
         lsr                     ; 2
         and #$0f                ; 2 - mask
         tax                     ; 2 - remember value
@@ -440,7 +440,7 @@ rdyloop:
         and #$18                ; 2 - mask
         lsr                     ; 2 - shift down
         lsr                     ; 2
-        eor $01                 ; 3 - read bits 3+2 (EOR inverts 1+0!)
+        eor $01                 ; 3 - read bits 3+2
         lsr                     ; 2
         and #$0f                ; 2 - mask
         ora nibbletab,x         ; 4 - add upper nibble
