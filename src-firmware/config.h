@@ -56,6 +56,13 @@
 #  define MEMTYPE_STRING "w25qflash"
 
 
+/* W25Q-SPI tapecart-diy */
+#elif CONFIG_HARDWARE_VARIANT == 4
+
+#  define HAVE_W25Q
+#  define MEMTYPE_STRING "w25qflash"
+
+
 #else
 #  error "Unknown hardware variant selected"
 #endif

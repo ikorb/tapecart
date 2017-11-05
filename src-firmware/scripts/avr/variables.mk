@@ -14,7 +14,13 @@ ASRC = avr/bitbanging.S
 
 SRC += avr/system.c
 
+# late proto with AT45 flash
 ifeq ($(CONFIG_HARDWARE_VARIANT),2)
+  SRC += avr/softspi.c
+endif
+
+# tapecart-diy
+ifeq ($(CONFIG_HARDWARE_VARIANT),4)
   SRC += avr/softspi.c
 endif
 

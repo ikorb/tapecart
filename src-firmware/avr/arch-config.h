@@ -38,7 +38,6 @@
 
 /* I/O port definitions */
 /* note: Write and Sense must be on the same port */
-
 #define SENSE_PORT  PORTA
 #define SENSE_DDR   DDRA
 #define SENSE_PIN   PINA
@@ -61,19 +60,36 @@
 
 #define MOTOR_BIT   0
 #define MOTOR_VECT  PCINT0_vect
-#define MOTOR_INVERTED
 
-/* I2C */
+/* early prototypes with I2C-EEPROM */
 #if CONFIG_HARDWARE_VARIANT == 1
 #  define SENSE_BIT   1
 #  define WRITE_BIT   7
 #  define READ_BIT    5
 
-/* AT45 */
+#  define MOTOR_INVERTED
+#  define LED_ACTIVE_LOW
+
+
+/* late prototypes with AT45 */
 #elif CONFIG_HARDWARE_VARIANT == 2
 #  define SENSE_BIT 7
 #  define WRITE_BIT 3
 #  define READ_BIT  1
+
+#  define MOTOR_INVERTED
+#  define LED_ACTIVE_LOW
+
+
+/* tapecart-diy */
+#elif CONFIG_HARDWARE_VARIANT == 4
+#  define SENSE_BIT 7
+#  define WRITE_BIT 3
+#  define READ_BIT  1
+
+#  define READ_INVERTED
+#  define LED_ACTIVE_LOW
+
 
 #else
 #  error "Unknown hardware variant selected"
@@ -94,7 +110,7 @@
 /* external EEPROM */
 #  define EEPROM_ADDR      0xa0
 
-#elif defined(HAVE_AT45)
+#elif defined(HAVE_AT45) || defined(HAVE_W25Q)
 
 #  define SPI_SS  PA2
 #  define SPI_SCK PA4
@@ -117,8 +133,13 @@ static inline void ioport_init(void) {
   MOTOR_DDR  &= ~_BV(MOTOR_BIT);
   SENSE_PORT &= ~_BV(SENSE_BIT);
   SENSE_DDR  |=  _BV(SENSE_BIT);
+#ifdef LED_ACTIVE_LOW
   LED_PORT   |=  _BV(LED_BIT);
   LED_DDR    &= ~_BV(LED_BIT);
+#else
+  LED_PORT   &= ~_BV(LED_BIT);
+  LED_DDR    |=  _BV(LED_BIT);
+#endif
 
   /* motor PCINT */
   PCMSK0  = _BV(MOTOR_BIT);

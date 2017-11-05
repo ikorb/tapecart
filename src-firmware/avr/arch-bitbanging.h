@@ -41,9 +41,15 @@
 
 static inline void clear_motor_int(void) {}
 
+#ifdef READ_INVERTED
+#  define READ_INVERT_FLAG true
+#else
+#  define READ_INVERT_FLAG false
+#endif
+
 static void inline __attribute__((always_inline)) set_read(bool state) {
   /* push/pull because there are multiple C2N/1351 versions that use a 7414 */
-  if (state)
+  if (state ^ READ_INVERT_FLAG)
     READ_PORT |=  _BV(READ_BIT);
   else
     READ_PORT &= ~_BV(READ_BIT);
@@ -57,6 +63,7 @@ static void inline __attribute__((always_inline)) set_sense(bool state) {
     SENSE_DDR |=  _BV(SENSE_BIT);
 }
 
+#ifdef LED_ACTIVE_LOW
 static void inline __attribute__((always_inline)) set_led(bool state) {
   /* toggle DDR to avoid a short if the user sets the PROG jumper */
   if (state) {
@@ -67,6 +74,15 @@ static void inline __attribute__((always_inline)) set_led(bool state) {
     LED_PORT |=  _BV(LED_BIT);
   }
 }
+#else
+static void inline __attribute__((always_inline)) set_led(bool state) {
+  if (state) {
+    LED_PORT |=  _BV(LED_BIT);
+  } else {
+    LED_PORT &= ~_BV(LED_BIT);
+  }
+}
+#endif
 
 static bool inline __attribute__((always_inline)) get_write(void) {
   return WRITE_PIN & _BV(WRITE_BIT);
