@@ -81,12 +81,92 @@ static void send_command(void) {
   cbm_close(15);
 }
 
+static uint8_t *bufptr;
+
+static void show_directory(void) {
+  unsigned char line = 0;
+
+  if (current_device == 0) {
+    cputsxy(2, STATUS_START - 2, "Cannot show directory of a REU!");
+    return;
+  }
+
+  res = cbm_open(CBM_LFN, current_device, 0, "$");
+  if (res != 0) {
+    cputsxy(2, STATUS_START - 2, "Failed to open directory");
+    return;
+  }
+
+  len = cbm_read(CBM_LFN, databuffer, 2);
+  if (len != 2) {
+    cputsxy(2, STATUS_START - 2, "Failed to read directory");
+    goto cleanup;
+  }
+
+  clear_mainarea_full();
+  gotoxy(0, 2);
+  len = 0;
+  line = 2;
+
+  while (1) {
+    /* fill buffer */
+    len += cbm_read(CBM_LFN, databuffer + len, 256 - len);
+    databuffer[len] = 0;
+
+    /* pause when screen is full */
+    if (line == STATUS_START) {
+      if (cgetc() == KEY_STOP) {
+        break;
+      }
+
+      line = 2;
+      clear_mainarea_full();
+      gotoxy(0, 2);
+    }
+
+    /* check for end marker */
+    if (databuffer[0] == 0 && databuffer[1] == 0) {
+      wait_key();
+      break;
+    }
+
+    /* file size */
+    cprintf("%u ", (uint16_t)databuffer[2] | ((uint16_t)databuffer[3] << 8));
+
+    /* print until end of line */
+    bufptr = databuffer + 4;
+    while (*bufptr != 0) {
+      if (*bufptr == RVS_ON) {
+        revers(1);
+      } else {
+        cputc(*bufptr);
+      }
+      bufptr++;
+    }
+
+    line++;
+    gotoxy(0, line);
+    revers(0);
+
+    /* shift remainder of buffer */
+    bufptr++;
+    len -= bufptr - databuffer;
+    memmove(databuffer, bufptr, len);
+  }
+
+ cleanup:
+  cbm_closedir(CBM_LFN);
+  clear_mainarea_full();
+}
+
+
 /*** menu ***/
 
 static const char *drive_menu_text[] = {
   "1. Change current device",
   "2. Send command",
-  "3. Return to main menu",
+  "3. Show directory",
+  "4. Return to main menu",
 };
 
 void drive_menu(void) {
@@ -107,7 +187,11 @@ void drive_menu(void) {
       send_command();
       break;
 
-    case 2:
+    case 2: // show directory
+      show_directory();
+      break;
+
+    case 3:
       return;
     }
   }

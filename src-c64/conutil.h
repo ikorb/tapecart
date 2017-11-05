@@ -49,6 +49,8 @@
 
 #define STATUS_START 18
 
+#define RVS_ON 18
+
 extern bool input_aborted;
 
 bool read_string(char *buffer, unsigned char maxlen,
