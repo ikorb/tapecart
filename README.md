@@ -31,6 +31,11 @@ This repository is organized as follows:
     This directory contains the source code for the firmware running
     on the tapecart.
 
+* hardware
+
+    This directory contains schematics and layout for various hardware
+    variants of the tapecart.
+
 * mass-programmer
 
     This directory contains schematics, layout and software for a
