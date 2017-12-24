@@ -21,3 +21,10 @@ different implementations of the tapecart:
     compiled using the config file "config-release1". A precompiled
     binary is located in the subdirectory "firmware".
 
+* duotape and duotape-riser
+
+    A simple tapecart-compatible tapeport switch, e.g. to switch
+    between two tapecarts or a tapecart and a Datasette(-emulator).
+    duotape is the main switch PCB, duotape-riser contains a layout
+    for a really trivial adapter board in case you don't have a 3.96mm
+    stripboard available.
