@@ -370,7 +370,10 @@ This commands reads from the tapecart's flash memory.
 
 1.  n byte data
 
-Sending a length of 0 bytes results in undefined behaviour.
+Attempting to read using a length of 0 bytes results in undefined behaviour.
+Reading from an address beyond the flash's size (either by specifying
+an invalid start address or a length that results in an access beyond
+the flash size) results in undefined behaviour.
 
 
 #### Command $11: READ\_FLASH\_FAST ####
@@ -387,6 +390,11 @@ with a fast 2-bit protocol.
 This command does not use the usual 1-bit protocol to reply!
 
 1.  n byte data
+
+Attempting to read using a length of 0 bytes results in undefined behaviour.
+Reading from an address beyond the flash's size (either by specifying
+an invalid start address or a length that results in an access beyond
+the flash size) results in undefined behaviour.
 
 Since the alternative protocol used by this command is timing
 sensitive, below is a sample code snippet that implements a compatible
@@ -471,6 +479,11 @@ This command writes to the tapecart's flash memory.
 3.  n byte data
 
 No reply
+
+Attempting to write using a length of 0 bytes results in undefined behaviour.
+Writing to an address beyond the flash's size (either by specifying
+an invalid start address or a length that results in an access beyond
+the flash size) results in undefined behaviour.
 
 The tapecart's firmware will ensure that page-crossings are handled
 correctly if you want to write more than one page, but it does not
