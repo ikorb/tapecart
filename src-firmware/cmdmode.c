@@ -615,7 +615,7 @@ static void read_devicesizes(void) {
 
 
 /* read capabilities */
-static void read_capabilites(void) {
+static void read_capabilities(void) {
   /* no parameters
    * reply:
    *  4 extended capability flags
@@ -792,8 +792,8 @@ static void command_handler(void) {
       read_devicesizes();
       break;
 
-    case CMD_READ_CAPABILITES:
-      read_capabilites();
+    case CMD_READ_CAPABILITIES:
+      read_capabilities();
       break;
 
     case CMD_READ_FLASH:

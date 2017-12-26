@@ -348,7 +348,7 @@ erase commands are needed.
 This command reads a bit field that specifies which extended
 capabilities are available on this tapecart. If an additional
 capability is available, its bit is set to 1. Currently, no extended
-capabilites are defined, so the value returned by this command
+capabilities are defined, so the value returned by this command
 consists of 4 $00 bytes.
 
 No parameters.
