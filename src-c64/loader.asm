@@ -114,8 +114,10 @@ no_carry:
 
         stx $2e                 ; update BASIC pointers
         stx $30                 ; (FIXME: Check if one of the ROM calls helps here)
+        stx $32
         sta $2d
         sta $2f
+        sta $31
 
         cli                     ; enable interrupts
         jsr $e453               ; restore vectors
