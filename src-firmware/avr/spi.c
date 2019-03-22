@@ -26,55 +26,45 @@
    SUCH DAMAGE.
 
 
-   config.h: static configuration
+   spi.c: SPI implementation for ATmega328P
 
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#include <avr/io.h>
+#include "config.h"
+#include "spi.h"
 
-#include "autoconf.h"
+// Mode 0:
+// - initial Clock low
+// - master out valid on rising edge
+// - master in sample on falling edge
 
-/* I2C tapecart (early proto) */
-#if CONFIG_HARDWARE_VARIANT == 1
+void spi_init(void) {
+  SPI_PORT |=  _BV(SPI_SS) | _BV(SPI_DI);
+  SPI_PORT &= ~_BV(SPI_SCK);
+  SPI_DDR  |=  _BV(SPI_SS) | _BV(SPI_SCK) | _BV(SPI_DO);
 
-#  define HAVE_I2C
-#  define MEMTYPE_STRING "i2ceeprom"
+  // Set SPI Clock to fosc/16 = 1MHz
+  SPCR  = _BV(SPE) | _BV(MSTR) | _BV(SPR0);
+  SPSR &= ~_BV(SPI2X);
+}
 
+uint8_t inline __attribute__((always_inline)) spi_exchange_byte(uint8_t txbyte) {
+  SPDR = txbyte;
+  while ((SPSR & _BV(SPIF)) == 0);
+  return SPDR;
+}
 
-/* AT45-SPI tapecart-xl (late proto) */
-#elif CONFIG_HARDWARE_VARIANT == 2
+#ifdef HAVE_SD
+void spi_clk_slow(void) {
+  // Set SPI Clock to fosc/64 = 250kHz
+  SPCR  = _BV(SPE) | _BV(MSTR) | _BV(SPR1) | _BV(SPR0);
+  SPSR |= _BV(SPI2X);
+}
 
-#  define HAVE_AT45
-#  define MEMTYPE_STRING "at45flash"
-
-
-/* W25Q-SPI tapecart (release) */
-#elif CONFIG_HARDWARE_VARIANT == 3
-
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
-
-
-/* W25Q-SPI tapecart-diy */
-#elif CONFIG_HARDWARE_VARIANT == 4
-
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
-
-/* SD-SPI tapecart-tapuino */
-#elif CONFIG_HARDWARE_VARIANT == 5
-
-#  define HAVE_SD
-#  define MEMTYPE_STRING "sdcard"
-
-#else
-#  error "Unknown hardware variant selected"
-#endif
-
-
-/* end of user-configurable options */
-
-#include "arch-config.h"
-
+void spi_clk_fast(void) {
+  // Set SPI Clock to fosc/2 = 8MHz
+  SPCR  = _BV(SPE) | _BV(MSTR);
+  SPSR |= _BV(SPI2X);
+}
 #endif

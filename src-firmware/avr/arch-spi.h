@@ -39,9 +39,9 @@
 
 static inline void spi_set_ss(bool state) {
   if (state == SPISS_HIGH) {
-    PORTA |=  _BV(SPI_SS);
+    SPI_PORT |=  _BV(SPI_SS);
   } else {
-    PORTA &= ~_BV(SPI_SS);
+    SPI_PORT &= ~_BV(SPI_SS);
   }
 }
 

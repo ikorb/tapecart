@@ -55,6 +55,22 @@ static void inline __attribute__((always_inline)) set_read(bool state) {
     READ_PORT &= ~_BV(READ_BIT);
 }
 
+static void inline __attribute__((always_inline)) set_write_output(bool state) {
+  if (state) {
+    WRITE_DDR |=  _BV(WRITE_BIT);
+  } else {
+    WRITE_DDR &= ~_BV(WRITE_BIT);
+  }
+}
+
+static void inline __attribute__((always_inline)) set_write(bool state) {
+  if (state) {
+    WRITE_PORT |=  _BV(WRITE_BIT);
+  } else {
+    WRITE_PORT &= ~_BV(WRITE_BIT);
+  }
+}
+
 static void inline __attribute__((always_inline)) set_sense(bool state) {
   /* use DDR to simulate a switch to GND, C64 has a pullup */
   if (state)

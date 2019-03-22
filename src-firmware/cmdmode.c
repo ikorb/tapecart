@@ -32,7 +32,6 @@
 
 #include <stdbool.h>
 #include "config.h"
-#include "arch-eeprom.h"
 #include "bitbanging.h"
 #include "commands.h"
 #include "crc32.h"
@@ -51,6 +50,12 @@
 
 static const FLASH char idstring[] = "tapecart v" VERSION " " MEMTYPE_STRING;
 
+#ifdef HAVE_SD
+static DIR dir;
+static bool dir_open = false;
+static bool send_dot_dot = false;
+#endif
+
 #ifdef ALLOW_RAMEXEC
 static uint8_t update_code[256] __attribute__((section(".ramexec")));
 extern void __attribute__((noreturn)) __ramexec_start__(uint32_t portbase);
@@ -64,13 +69,16 @@ mcu_eeprom_t EEMEM mcu_eeprom;
 typedef bool    (*send_byte_t)(uint8_t b);
 typedef int16_t (*get_byte_t)(void);
 typedef bool    (*check_abort_t)(void);
-static send_byte_t   send_byte;
-static get_byte_t    get_byte;
-static check_abort_t check_abort;
+typedef void    (*send_byte_fast_t)(uint8_t b);
+static send_byte_t      send_byte;
+static get_byte_t       get_byte;
+static check_abort_t    check_abort;
+static send_byte_fast_t send_byte_fast;
 #else
-  #define send_byte   c64_send_byte
-  #define get_byte    c64_get_byte
-  #define check_abort get_motor
+  #define send_byte      c64_send_byte
+  #define get_byte       c64_get_byte
+  #define check_abort    get_motor
+  #define send_byte_fast fast_sendbyte_cmdmode
 #endif
 
 /* debug flags */
@@ -100,6 +108,7 @@ static int16_t c64_get_byte(void) {
 
   v = 0;
   for (i = 0; i < 8; i++) {
+#if CONFIG_HARDWARE_VARIANT != 5  // WRITE_PORT == SENSE_PORT
     do {
       tmp = get_port();
 
@@ -108,6 +117,21 @@ static int16_t c64_get_byte(void) {
     } while (!(tmp & _BV(WRITE_BIT)));
 
     v = (v << 1) | !!(tmp & _BV(SENSE_BIT));
+#else
+    uint8_t tmp_sense;
+
+    do {
+      disable_interrupts();
+      tmp = get_write();
+      tmp_sense = get_sense();
+      enable_interrupts();
+
+      if (check_abort())
+        return -1;
+    } while (!tmp);
+
+    v = (v << 1) | !!tmp_sense;
+#endif
 
     while (get_write() && !check_abort()) ;
   }
@@ -180,6 +204,10 @@ static bool c64_send_byte(uint8_t v) {
 static bool uart_send_byte(uint8_t b) {
   uart_putc(b);
   return false;
+}
+
+static void uart_send_byte_fast(uint8_t b) {
+  uart_putc(b);
 }
 
 static int16_t uart_get_byte(void) {
@@ -421,7 +449,7 @@ static void read_flash_fast(void) {
     if (check_abort())
       break;
 
-    fast_sendbyte_cmdmode(tmp & 0xff);
+    send_byte_fast(tmp & 0xff);
   }
   
   extmem_read_stop();
@@ -665,7 +693,7 @@ static void set_dirparams(void) {
   get_u8(&dir_data_len);
 }
 
-static uint8_t dir_namebuf[16];
+static uint8_t dir_namebuf[16+1];
 
 static void do_dir_lookup(void) {
   /* parameters:
@@ -735,6 +763,139 @@ static void do_dir_lookup(void) {
   extmem_read_stop();
 }
 
+#ifdef HAVE_SD
+static void sd_open_dir(void) {
+  /* parameters:
+   *   16 byte dir name (null-terminated if shorter than 16 bytes)
+   * reply:
+   *   16 byte current dir name (null-terminated if shorter than 16 bytes)
+   */
+
+  /* read name from C64 */
+  for (uint8_t i = 0; i < 16; i++) {
+    if (get_u8(dir_namebuf + i))
+      return;
+  }
+  dir_namebuf[16] = 0;
+
+  if (dir_open) {
+    f_closedir(&dir);
+    dir_open = false;
+  }
+
+  char new_dir[64];
+  new_dir[0] = 0;
+  uint8_t index = 0;
+
+  if (f_chdir((char *)dir_namebuf) == FR_OK &&
+      f_opendir(&dir, "") == FR_OK) {
+    dir_open = true;
+    send_dot_dot = true;
+
+    f_getcwd(new_dir, sizeof(new_dir));
+
+    uint8_t len = 0;
+    for (; len < sizeof(new_dir); len++) {
+      if (!new_dir[len])
+        break;
+    }
+
+    if (len == 0) {
+      new_dir[0] = '.';
+      new_dir[1] = 0;
+    } else if (len > 16) {
+      index = len - 16;
+      new_dir[index] = '.';
+      new_dir[index+1] = '.';
+    } else if (len == 1 && new_dir[0] == '/') {
+      send_dot_dot = false;
+    }
+  }
+
+  for (uint8_t i = index; i < index + 16; i++) {
+    if (send_byte(new_dir[i]))
+      return;
+  }
+}
+
+static void sd_read_dir(void) {
+  /* parameters:
+   *   2 byte max number of files (0: no limit)
+   * reply:
+   *   1 byte file type (0: end of dir, see file_t)
+   *   3 byte file size
+   *  16 byte filename (null-terminated if shorter than 16 bytes)
+   */
+
+  uint16_t max_files;
+  if (get_u16(&max_files))
+    return;
+
+  for (uint16_t i = 0; max_files == 0 || i < max_files; i++) {
+    uint8_t file_type = 0;
+    uint24 file_size = 0;
+    FILINFO info;
+    info.fname[0] = 0;
+
+    if (dir_open) {
+      if (send_dot_dot) {
+        info.fname[0] = '.';
+        info.fname[1] = '.';
+        info.fname[2] = 0;
+        file_type = FILE_DIR;
+
+        send_dot_dot = false;
+      } else {
+        if (f_readdir(&dir, &info) != FR_OK || !info.fname[0]) {
+          f_closedir(&dir);
+          dir_open = false;
+        } else {
+          if (info.fattrib & AM_DIR) {
+            file_type = FILE_DIR;
+          } else {
+            file_type = get_file_type(info.fname);
+          }
+
+          file_size = (uint24)(0xFFFFFF & info.fsize);
+        }
+      }
+    }
+
+    send_byte_fast(file_type);
+
+    uint8_t *size_ptr = (uint8_t *)&file_size;
+    send_byte_fast(*size_ptr++);
+    send_byte_fast(*size_ptr++);
+    send_byte_fast(*size_ptr);
+
+    for (uint8_t l = 0; l < 16; l++) {
+      send_byte_fast(info.fname[l]);
+    }
+
+    if (file_type == 0)
+      break;
+
+    if (check_abort())
+      break;
+  }
+}
+
+static void sd_select_file(void) {
+  /* parameters:
+   *   16 byte dir name (null-terminated if shorter than 16 bytes)
+   * no reply
+   */
+
+  /* read name from C64 */
+  for (uint8_t i = 0; i < 16; i++) {
+    if (get_u8(dir_namebuf + i))
+      return;
+  }
+
+  dir_namebuf[16] = 0;
+  select_file((char *)dir_namebuf);
+}
+#endif
 
 #ifdef ALLOW_RAMEXEC
 /* download code and execute it */
@@ -864,6 +1025,20 @@ static void command_handler(void) {
       do_dir_lookup();
       break;
 
+#ifdef HAVE_SD
+    case CMD_SD_OPEN_DIR:
+      sd_open_dir();
+      break;
+
+    case CMD_SD_READ_DIR_FAST:
+      sd_read_dir();
+      break;
+
+    case CMD_SD_SELECT_FILE:
+      sd_select_file();
+      break;
+#endif
+
 #ifdef ALLOW_RAMEXEC
     case CMD_RAMEXEC:
       start_ramexec();
@@ -901,9 +1076,10 @@ void c64command_handler(void) {
   
   /* call command handler */
 #ifdef HAVE_UART
-  send_byte   = c64_send_byte;
-  get_byte    = c64_get_byte;
-  check_abort = get_motor;
+  send_byte      = c64_send_byte;
+  get_byte       = c64_get_byte;
+  check_abort    = get_motor;
+  send_byte_fast = fast_sendbyte_cmdmode;
 #endif
   command_handler();
 
@@ -921,9 +1097,10 @@ void uartcommand_handler(void) {
   debug_flags |= DEBUGFLAG_SEND_CMDOK;
   uart_clearbreak();
   
-  send_byte   = uart_send_byte;
-  get_byte    = uart_get_byte;
-  check_abort = uart_checkbreak;
+  send_byte      = uart_send_byte;
+  get_byte       = uart_get_byte;
+  check_abort    = uart_checkbreak;
+  send_byte_fast = uart_send_byte_fast;
   command_handler();
 
   uart_puts("BYE");

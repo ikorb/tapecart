@@ -42,7 +42,4 @@ static inline void eeprom_safety(void) {
 static inline void eeprom_flush_loader(void)   {}
 static inline void eeprom_flush_loadinfo(void) {}
 
-/* technically not EEPROM-related, but a header just for this #define would be overkill */
-#define FLASH __flash
-
 #endif

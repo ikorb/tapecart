@@ -111,4 +111,9 @@ static inline void ioport_uart_init(void) {
 
 typedef uint32_t uint24;
 
+#define FLASH
+#define FLASH_MEMCPY memcpy
+
+#define EEMEM __attribute__((aligned(4)))
+
 #endif

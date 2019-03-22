@@ -10,7 +10,9 @@ FORMAT = ihex
 #     Even though the DOS/Win* filesystem matches both .s and .S the same,
 #     it will preserve the spelling of the filenames, and gcc itself does
 #     care about how the name is spelled on its command-line.
-ASRC = avr/bitbanging.S
+ifneq ($(CONFIG_HARDWARE_VARIANT),5)
+  ASRC = avr/bitbanging.S
+endif
 
 SRC += avr/system.c
 
@@ -22,6 +24,11 @@ endif
 # tapecart-diy
 ifeq ($(CONFIG_HARDWARE_VARIANT),4)
   SRC += avr/softspi.c
+endif
+
+# tapecart-tapuino
+ifeq ($(CONFIG_HARDWARE_VARIANT),5)
+  SRC += avr/arch-bitbanging.c avr/spi.c avr/uart.c
 endif
 
 #---------------- Library Options ----------------
@@ -74,10 +81,17 @@ EXTMEMOPTS =
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = stk200
 
-# com1 = serial port. Use lpt1 to connect to parallel port.
-AVRDUDE_PORT = lpt1    # programmer connected to serial device
+# tapuino
+ifeq ($(CONFIG_HARDWARE_VARIANT),5)
+  AVRDUDE_PROGRAMMER = arduino
+
+  # com1 = serial port. Use lpt1 to connect to parallel port.
+  AVRDUDE_PORT = /dev/ttyUSB0   # programmer connected to serial device
+else
+  AVRDUDE_PROGRAMMER = stk200
+  AVRDUDE_PORT = lpt1
+endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 # AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep

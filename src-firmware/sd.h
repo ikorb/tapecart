@@ -26,55 +26,59 @@
    SUCH DAMAGE.
 
 
-   config.h: static configuration
+   sd.h: Definitions for SD card access
 
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef SD_H
+#define SD_H
 
-#include "autoconf.h"
+#include <stdbool.h>
+#include "diskio.h"
 
-/* I2C tapecart (early proto) */
-#if CONFIG_HARDWARE_VARIANT == 1
+typedef enum {
+  FILE_NONE = 0x00,
+  FILE_DIR,
 
-#  define HAVE_I2C
-#  define MEMTYPE_STRING "i2ceeprom"
+  FILE_PRG,
+  FILE_TCRT,
 
+  FILE_TAP,
+  FILE_D64,
 
-/* AT45-SPI tapecart-xl (late proto) */
-#elif CONFIG_HARDWARE_VARIANT == 2
+  FILE_UNKNOWN = 0xFF
+} file_t;
 
-#  define HAVE_AT45
-#  define MEMTYPE_STRING "at45flash"
+typedef struct {
+  uint8_t type;
+  uint24 size;
+  char name[16];
+} file_info_t;
 
+uint8_t get_file_type(char *filename);
+bool    select_file(char *filename);
 
-/* W25Q-SPI tapecart (release) */
-#elif CONFIG_HARDWARE_VARIANT == 3
+static inline uint8_t eeprom_read_byte(void *ptr) {
+  uint8_t *u8ptr = ptr;
+  return *u8ptr;
+}
 
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
+static inline uint16_t eeprom_read_word(void *ptr) {
+  uint16_t *u16ptr = ptr;
+  return *u16ptr;
+}
 
+static inline void eeprom_write_byte(void *ptr, uint8_t val) {
+  uint8_t *u8ptr = ptr;
+  *u8ptr = val;
+}
 
-/* W25Q-SPI tapecart-diy */
-#elif CONFIG_HARDWARE_VARIANT == 4
+static inline void eeprom_write_word(void *ptr, uint16_t val) {
+  uint16_t *u16ptr = ptr;
+  *u16ptr = val;
+}
 
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
-
-/* SD-SPI tapecart-tapuino */
-#elif CONFIG_HARDWARE_VARIANT == 5
-
-#  define HAVE_SD
-#  define MEMTYPE_STRING "sdcard"
-
-#else
-#  error "Unknown hardware variant selected"
-#endif
-
-
-/* end of user-configurable options */
-
-#include "arch-config.h"
-
+static inline void eeprom_safety(void) {}
+static inline void eeprom_flush_loader(void)   {}
+static inline void eeprom_flush_loadinfo(void) {}
 #endif

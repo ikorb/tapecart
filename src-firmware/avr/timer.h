@@ -40,7 +40,23 @@
 #define delay_ms(x) _delay_ms(x)
 #define delay_us(x) _delay_us(x)
 
+#if CONFIG_HARDWARE_VARIANT != 5
 #define PULSETIMER_HANDLER ISR(TIM0_COMPA_vect)
+#else
+#define PULSETIMER_HANDLER ISR(TIMER0_COMPA_vect)
+#endif
+
+#ifdef HAVE_SD
+#define SD_TIMER_HANDLER ISR(TIMER2_COMPA_vect)
+
+static inline void sd_timer_init(void) {
+  /* Start 100Hz system timer */
+  OCR2A = F_CPU / 1024 / 100 - 1;
+  TCCR2A = _BV(WGM21);
+  TCCR2B = _BV(CS22) | _BV(CS21) | _BV(CS20);
+  TIMSK2 = _BV(OCIE2A);
+}
+#endif
 
 static inline void pulsetimer_init(void) {
   OCR0A  = 0xff; // start with a long(ish) pause
@@ -49,7 +65,12 @@ static inline void pulsetimer_init(void) {
 }
 
 static inline void pulsetimer_set_pulselen(uint8_t len) {
+#if CONFIG_HARDWARE_VARIANT != 5
   OCR0A = len;
+#else
+  /* adjust for higher clock frequency */
+  OCR0A = len * 2;
+#endif
 }
 
 /* enable/disable pulse ISR */

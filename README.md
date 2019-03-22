@@ -1,10 +1,17 @@
+# tapecart SD #
+
+This is a fork of tapecart that adds SD card support using the Tapuino hardware.
+TCRT and PRG files can be loaded using the Tapecart SD Browser (browser.prg) which should be placed in the root directory of the SD card.
+
+There are no support for buttons and display on the Tapuino. Flash and loader write commands are not supported.
+
 # tapecart #
 
 tapecart - a tape port storage pod for the C64
 
-Copyright (C) 2013-2017 by Ingo Korb <ingo@akana.de>  
-All rights reserved.  
-Idea by enthusi  
+Copyright (C) 2013-2017 by Ingo Korb <ingo@akana.de>
+All rights reserved.
+Idea by enthusi
 
 # About #
 
@@ -74,4 +81,3 @@ The firmware itself is distributed under the following conditions:
 Please note that the firmware source code includes third-party header files
 taken from the Atmel Software Framework. Please check its
 [README](src-firmware/README.md) for more details.
-

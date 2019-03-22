@@ -35,9 +35,12 @@
 #define ARCH_CONFIG_H
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 
 /* I/O port definitions */
 /* note: Write and Sense must be on the same port */
+#if CONFIG_HARDWARE_VARIANT != 5
+
 #define SENSE_PORT  PORTA
 #define SENSE_DDR   DDRA
 #define SENSE_PIN   PINA
@@ -60,6 +63,8 @@
 
 #define MOTOR_BIT   0
 #define MOTOR_VECT  PCINT0_vect
+
+#endif
 
 /* early prototypes with I2C-EEPROM */
 #if CONFIG_HARDWARE_VARIANT == 1
@@ -90,6 +95,38 @@
 #  define READ_INVERTED
 #  define LED_ACTIVE_LOW
 
+/* tapecart-tapuino */
+#elif CONFIG_HARDWARE_VARIANT == 5
+
+#define SENSE_PORT  PORTD
+#define SENSE_DDR   DDRD
+#define SENSE_PIN   PIND
+#define SENSE_BIT   5
+
+#define WRITE_PORT  PORTB
+#define WRITE_DDR   DDRB
+#define WRITE_PIN   PINB
+#define WRITE_BIT   0
+
+#define READ_PORT   PORTD
+#define READ_DDR    DDRD
+#define READ_PIN    PIND
+#define READ_BIT    3
+
+#define MOTOR_PORT  PORTD
+#define MOTOR_DDR   DDRD
+#define MOTOR_PIN   PIND
+#define MOTOR_BIT   4
+#define MOTOR_VECT  PCINT2_vect
+
+/* NOTE: Normally not connected on Tapuino */
+#define LED_PORT    PORTD
+#define LED_DDR     DDRD
+#define LED_BIT     2
+
+#define MOTOR_INVERTED
+
+#define HAVE_UART
 
 #else
 #  error "Unknown hardware variant selected"
@@ -112,11 +149,21 @@
 
 #elif defined(HAVE_AT45) || defined(HAVE_W25Q)
 
-#  define SPI_SS  PA2
-#  define SPI_SCK PA4
-#  define SPI_DO  PA5
-#  define SPI_DI  PA6
+#  define SPI_PORT  PORTA
+#  define SPI_DDR   DDRA
+#  define SPI_SS    PA2
+#  define SPI_SCK   PA4
+#  define SPI_DO    PA5
+#  define SPI_DI    PA6
 
+#elif defined(HAVE_SD)
+
+#  define SPI_PORT  PORTB
+#  define SPI_DDR   DDRB
+#  define SPI_SS    PB2
+#  define SPI_SCK   PB5
+#  define SPI_DO    PB3
+#  define SPI_DI    PB4
 
 #else
 
@@ -142,13 +189,28 @@ static inline void ioport_init(void) {
 #endif
 
   /* motor PCINT */
+#if CONFIG_HARDWARE_VARIANT != 5
+
   PCMSK0  = _BV(MOTOR_BIT);
   GIMSK  |= _BV(PCIE0);
   GIFR   |= _BV(PCIF0);
+
+#else
+
+  PCMSK2  = _BV(MOTOR_BIT);
+  PCICR  |= _BV(PCIE2);
+  PCIFR  |= _BV(PCIF2);
+
+#endif
 }
 
 static inline void ioport_uart_init(void) { }
 
 typedef __uint24 uint24;
+
+#define FLASH __flash
+#define FLASH_MEMCPY memcpy_P
+
+#define EEMEM
 
 #endif

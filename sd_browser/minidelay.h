@@ -26,55 +26,14 @@
    SUCH DAMAGE.
 
 
-   config.h: static configuration
+   minidelay.h: Interface to the assembler module for small delays
 
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef MINIDELAY_H
+#define MINIDELAY_H
 
-#include "autoconf.h"
-
-/* I2C tapecart (early proto) */
-#if CONFIG_HARDWARE_VARIANT == 1
-
-#  define HAVE_I2C
-#  define MEMTYPE_STRING "i2ceeprom"
-
-
-/* AT45-SPI tapecart-xl (late proto) */
-#elif CONFIG_HARDWARE_VARIANT == 2
-
-#  define HAVE_AT45
-#  define MEMTYPE_STRING "at45flash"
-
-
-/* W25Q-SPI tapecart (release) */
-#elif CONFIG_HARDWARE_VARIANT == 3
-
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
-
-
-/* W25Q-SPI tapecart-diy */
-#elif CONFIG_HARDWARE_VARIANT == 4
-
-#  define HAVE_W25Q
-#  define MEMTYPE_STRING "w25qflash"
-
-/* SD-SPI tapecart-tapuino */
-#elif CONFIG_HARDWARE_VARIANT == 5
-
-#  define HAVE_SD
-#  define MEMTYPE_STRING "sdcard"
-
-#else
-#  error "Unknown hardware variant selected"
-#endif
-
-
-/* end of user-configurable options */
-
-#include "arch-config.h"
+void minidelay(void);
+void tinydelay(void);
 
 #endif

@@ -33,7 +33,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include "config.h"
-#include "arch-eeprom.h"
 #include "bitbanging.h"
 #include "cmdmode.h"
 #include "debugflags.h"
@@ -43,6 +42,10 @@
 #include "uart.h"
 #include "utils.h"
 #include "watchdog.h"
+
+#ifdef HAVE_SD
+#include "diskio.h"
+#endif
 
 /* half-wave pulse timer values */
 #define CBMPULSE_SHORT  (0x30 / 2 - 1)
@@ -66,7 +69,7 @@ static          uint8_t tapbuf_writeidx;
 /* motor/write shift register and mode selection */
 static volatile uint16_t  shift_reg;
 static volatile tapmode_t mode = MODE_STREAM;
-static volatile bool      motor_changed;
+static          tapmode_t old_mode = MODE_STREAM;
 
 /* external flash tool detection */
 static const char uart_trigger_string[] = "UARTPROG";
@@ -97,6 +100,13 @@ PULSETIMER_HANDLER {
   first_half = !first_half;
 }
 
+/* timer 2 overflow ISR for disk timer */
+#ifdef HAVE_SD
+SD_TIMER_HANDLER {
+  disk_timerproc();
+}
+#endif
+
 /* pinchange ISR for the motor line */
 MOTOR_HANDLER {
   if (get_motor()) {
@@ -112,7 +122,7 @@ MOTOR_HANDLER {
     } else if (shift_reg == SREG_MAGIC_VALUE_COMMAND) {
       mode = MODE_C64COMMAND;
     }
-      
+
   } else {
     /* motor is off */
     pulsetimer_enable(false);
@@ -256,7 +266,6 @@ static bool tx_byte(uint8_t b) {
 static void loader_handler(void) {
   set_led(true);
   pulsetimer_enable(false);
-  motor_changed = false;
 
   /* enable watchdog to handle lockups */
   wdt_enable(WDTO_250MS);
@@ -319,6 +328,9 @@ int main(void) {
   ioport_init();
   uart_init();
   extmem_init();
+#ifdef HAVE_SD
+  sd_timer_init();
+#endif
   pulsetimer_init();
   enable_interrupts();
 
@@ -334,25 +346,40 @@ int main(void) {
   }
 #endif
 
-  pulsetimer_enable(true);
-
   while (1) {
+    old_mode  = mode;
     mode      = MODE_STREAM;
     shift_reg = 0;
 
-    /* transmit header block */
-    cbm_sync(1500); // note: 500 appears to be less reliable
-    cbm_datablock(header_datafunc);
-    
-    /* transmit the autostart vector */
-    cbm_sync(1500); // note: 500 does not work
-    cbm_datablock(vector_datafunc);
+#ifdef HAVE_SD
+    if (old_mode == MODE_STREAM &&
+        !select_file("browser.prg") && !select_file("default.tcrt")) {
+      set_sense(true);
+      delay_ms(500);
+      continue;
+    }
+#endif
 
-    /* wait until pulse buffer is empty or motor stopped */
-    while (get_motor() && (tapbuf_writeidx != tapbuf_readidx)) ;
+    set_sense(false);
 
-    /* fill pulse buffer with syncs */
-    memset((void *)tap_buffer, CBMPULSE_SHORT, sizeof(tap_buffer));
+    if (old_mode == MODE_C64COMMAND) {
+      // allow fast transition from command to loader mode
+      delay_ms(100);
+    } else {
+      /* transmit header block */
+      cbm_sync(1500); // note: 500 appears to be less reliable
+      cbm_datablock(header_datafunc);
+
+      /* transmit the autostart vector */
+      cbm_sync(1500); // note: 500 does not work
+      cbm_datablock(vector_datafunc);
+
+      /* wait until pulse buffer is empty or motor stopped */
+      while (get_motor() && (tapbuf_writeidx != tapbuf_readidx)) ;
+
+      /* fill pulse buffer with syncs */
+      memset((void *)tap_buffer, CBMPULSE_SHORT, sizeof(tap_buffer));
+    }
 
     /* turn off sense for ~200ms to allow loading again */
     // note: restart isn't reliable if the delay is just 100ms
@@ -383,10 +410,5 @@ int main(void) {
     default:
       break;
     }
-
-    /* set sense low and turn on pulses immediately if motor is active */
-    set_sense(false);
-    if (get_motor())
-      pulsetimer_enable(true);
   }
 }

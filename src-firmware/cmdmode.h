@@ -32,7 +32,11 @@
 #ifndef CMDMODE_H
 #define CMDMODE_H
 
+#ifndef HAVE_SD
 #include "arch-eeprom.h"
+#else
+#include "sd.h"
+#endif
 
 void c64command_handler(void);
 void uartcommand_handler(void);

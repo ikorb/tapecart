@@ -28,9 +28,6 @@
 
    spi.h: Definitions for SPI transfers
 
-   There is no spi.c, the functions defined here are currently implemented
-   by softspi.c.
-
 */
 
 #ifndef SPI_H
@@ -42,9 +39,15 @@
 #define SPISS_LOW  false
 #define SPISS_HIGH true
 
+#include "config.h"
 #include "arch-spi.h"
 
 void    spi_init(void);
 uint8_t spi_exchange_byte(uint8_t txbyte);
+
+#ifdef HAVE_SD
+void    spi_clk_slow(void);
+void    spi_clk_fast(void);
+#endif
 
 #endif

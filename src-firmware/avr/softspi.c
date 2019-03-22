@@ -40,9 +40,9 @@
 // - master in sample on falling edge
 
 void spi_init(void) {
-  PORTA |=  _BV(SPI_SS) | _BV(SPI_DI);
-  PORTA &= ~_BV(SPI_SCK);
-  DDRA  |=  _BV(SPI_SS) | _BV(SPI_SCK) | _BV(SPI_DO);
+  SPI_PORT |=  _BV(SPI_SS) | _BV(SPI_DI);
+  SPI_PORT &= ~_BV(SPI_SCK);
+  SPI_DDR  |=  _BV(SPI_SS) | _BV(SPI_SCK) | _BV(SPI_DO);
 
   USICR = _BV(USIWM0) | _BV(USICS1) | _BV(USICLK);
 }

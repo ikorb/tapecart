@@ -12,12 +12,11 @@ FORMAT = binary
 #     care about how the name is spelled on its command-line.
 ASRC = samd09/startup.S
 
-SRC += samd09/system.c samd09/bitbanging.c samd09/timer.c samd09/eeprom.c samd09/uart.c
+SRC += samd09/system.c samd09/bitbanging.c samd09/timer.c samd09/uart.c samd09/spi.c
 
-ifeq ($(CONFIG_HARDWARE_VARIANT),2)
-  SRC += samd09/spi.c
-else ifeq ($(CONFIG_HARDWARE_VARIANT),3)
-  SRC += samd09/spi.c
+# config-release1
+ifeq ($(CONFIG_HARDWARE_VARIANT),3)
+  SRC += samd09/eeprom.c
 endif
 
 # ------- assemble final ARCH_* variables -------

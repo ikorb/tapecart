@@ -35,9 +35,6 @@
 
 #include <stdint.h>
 
-#define FLASH
-#define EEMEM __attribute__((aligned(4)))
-
 static inline uint8_t eeprom_read_byte(void *ptr) {
   uint8_t *u8ptr = ptr;
   return *u8ptr;

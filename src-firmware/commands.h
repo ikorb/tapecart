@@ -60,6 +60,11 @@ typedef enum {
   CMD_DIR_SETPARAMS = 0x40,
   CMD_DIR_LOOKUP,
   
+  /* SD commands */
+  CMD_SD_OPEN_DIR = 0x80,
+  CMD_SD_READ_DIR_FAST,
+  CMD_SD_SELECT_FILE,
+
   /* internal use only */
   CMD_RAMEXEC = 0xf0,
 } command_t;
