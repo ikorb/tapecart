@@ -40,13 +40,15 @@
 // - master in sample on falling edge
 
 void spi_init(void) {
-  SPI_PORT |=  _BV(SPI_SS) | _BV(SPI_DI);
-  SPI_PORT &= ~_BV(SPI_SCK);
   SPI_DDR  |=  _BV(SPI_SS) | _BV(SPI_SCK) | _BV(SPI_DO);
+  SPI_DDR  &= ~_BV(SPI_DI);
+  SPI_PORT |=  _BV(SPI_SS) | _BV(SPI_SCK) | _BV(SPI_DO) | _BV(SPI_DI);
 
+#ifndef HAVE_SD
   // Set SPI Clock to fosc/16 = 1MHz
   SPCR  = _BV(SPE) | _BV(MSTR) | _BV(SPR0);
   SPSR &= ~_BV(SPI2X);
+#endif
 }
 
 uint8_t inline __attribute__((always_inline)) spi_exchange_byte(uint8_t txbyte) {
