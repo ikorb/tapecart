@@ -46,7 +46,7 @@ void spi_init(void) {
 
 #ifndef HAVE_SD
   // Set SPI Clock to fosc/16 = 1MHz
-  SPCR  = _BV(SPE) | _BV(MSTR) | _BV(SPR0);
+  SPCR  =  _BV(SPE) | _BV(MSTR) | _BV(SPR0);
   SPSR &= ~_BV(SPI2X);
 #endif
 }
@@ -58,10 +58,14 @@ uint8_t inline __attribute__((always_inline)) spi_exchange_byte(uint8_t txbyte) 
 }
 
 #ifdef HAVE_SD
+void spi_disable(void) {
+  SPCR = 0;
+}
+
 void spi_clk_slow(void) {
-  // Set SPI Clock to fosc/64 = 250kHz
-  SPCR  = _BV(SPE) | _BV(MSTR) | _BV(SPR1) | _BV(SPR0);
-  SPSR |= _BV(SPI2X);
+  // Set SPI Clock to fosc/128 = 125kHz
+  SPCR  =  _BV(SPE) | _BV(MSTR) | _BV(SPR1) | _BV(SPR0);
+  SPSR &= ~_BV(SPI2X);
 }
 
 void spi_clk_fast(void) {

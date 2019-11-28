@@ -80,6 +80,7 @@ void power_on (void)
 static
 void power_off (void)
 {
+    spi_disable();
 }
 
 

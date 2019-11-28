@@ -46,6 +46,7 @@ void    spi_init(void);
 uint8_t spi_exchange_byte(uint8_t txbyte);
 
 #ifdef HAVE_SD
+void    spi_disable(void);
 void    spi_clk_slow(void);
 void    spi_clk_fast(void);
 #endif
