@@ -1,15 +1,5 @@
 /*
- * db.c
- *
- *  Created on: 10.01.2009
- *      Author: bader
- *
- * DraCopy (dc*) is a simple copy program.
- * DraBrowser (db*) is a simple file browser.
- *
- * Since both programs make use of kernal routines they shall
- * be able to work with most file oriented IEC devices.
- *
+ * Derived from Draco Browser V1.0C 8 Bit (27.12.2009)
  * Created 2009 by Sascha Bader
  *
  * The code can be used freely as long as you retain
@@ -21,7 +11,6 @@
  * Newer versions might be available here: http://www.sascha-bader.de/html/code.html
  *
  */
-
 
 #include <stdio.h>
 #include <string.h>
@@ -56,7 +45,7 @@ static void printElement(uint16_t pos, int xpos, int ypos);
 static char linebuffer[SCREENW+1];
 static Directory *dir = NULL;
 static uint8_t textc = COLOR_LIGHTGREEN;
-static const char *program = "Tapecart SD Browser v1.0";
+static const char *program = "Tapecart SD Browser v1.1";
 
 #ifdef DIRH
 #undef DIRH
@@ -347,25 +336,39 @@ static void about(void)
 {
 	clrscr();
 	textcolor(COLOR_YELLOW);
-	gotoxy(0, 1);
-	cprintf("       %s", program);
+	gotoxy(14, 0);
+	cputs("Tapecart SD");
+    textcolor(COLOR_ORANGE);
+    gotoxy(14, 1);
+    cputs("\xa3\xa3\xa3\xa3\xa3\xa3\xa3\xa3\xa3\xa3\xa3");
+    gotoxy(4, 2);
+	cputs("github.com/KimJorgensen/tapecart");
 	textcolor(COLOR_LIGHTGREEN);
-	gotoxy(0, 4);
-	cputs("             derived from");
-	gotoxy(0, 6);
-	cputs("Draco Browser V1.0C 8 Bit (27.12.2009)");
-	gotoxy(0, 7);
-	cputs("        Copyright 2009 by Draco");
-	textcolor(COLOR_GREEN);
+	gotoxy(13, 4);
+	cputs("derived from");
+
+	gotoxy(2, 6);
+	cputs("tapecart (C) 2013-2017 by Ingo Korb");
+    gotoxy(7, 7);
+	cputs("github.com/ikorb/tapecart");
+
+    gotoxy(18, 9);
+	cputs("and");
+
 	gotoxy(0, 11);
-	cputs("THIS PROGRAM IS DISTRIBUTED IN THE HOPE");
-	gotoxy(0, 12);
-	cputs("THAT IT WILL BE USEFUL.");
-	gotoxy(0, 14);
-	cputs("IT IS PROVIDED WITH NO WARRANTY OF ANY ");
+	cputs("Draco Browser V1.0C 8 Bit (27.12.2009)");
+	gotoxy(8, 12);
+	cputs("Copyright 2009 by Draco");
+	textcolor(COLOR_GREEN);
 	gotoxy(0, 15);
-	cputs("KIND.");
+	cputs("THIS PROGRAM IS DISTRIBUTED IN THE HOPE");
+	gotoxy(0, 16);
+	cputs("THAT IT WILL BE USEFUL.");
 	gotoxy(0, 18);
+	cputs("IT IS PROVIDED WITH NO WARRANTY OF ANY ");
+	gotoxy(0, 19);
+	cputs("KIND.");
+	gotoxy(0, 21);
 	textcolor(COLOR_LIGHTRED);
 	cputs("USE IT AT YOUR OWN RISK!");
 	gotoxy(0, BOTTOM);
