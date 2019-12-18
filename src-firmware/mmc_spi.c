@@ -161,12 +161,13 @@ void deselect (void)
 /*-----------------------------------------------------------------------*/
 
 static
-int select (void)	/* 1:Successful, 0:Timeout */
+int select (int check_ready)	/* 1:Successful, 0:Timeout */
 {
 	CS_LOW();		/* Set CS# low */
 	xchg_spi(0xFF);	/* Dummy clock (force DO enabled) */
 
-	if (wait_ready(500)) return 1;	/* Leading busy check: Wait for card ready */
+	if (!check_ready ||
+	    wait_ready(500)) return 1;	/* Leading busy check: Wait for card ready */
 
 	deselect();		/* Timeout */
 	return 0;
@@ -256,7 +257,7 @@ BYTE send_cmd (		/* Returns R1 resp (bit7==1:Send failed) */
 	/* Select the card and wait for ready except to stop multiple block read */
 	if (cmd != CMD12) {
 		deselect();
-		if (!select()) return 0xFF;
+		if (!select(cmd != CMD0)) return 0xFF;
 	}
 
 	/* Send command packet */
@@ -468,7 +469,7 @@ DRESULT disk_ioctl (
 	res = RES_ERROR;
 	switch (cmd) {
 	case CTRL_SYNC :		/* Make sure that no pending write process. Do not remove this or written sector might not left updated. */
-		if (select()) res = RES_OK;
+		if (select(1)) res = RES_OK;
 		deselect();
 		break;
 
