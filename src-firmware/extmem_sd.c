@@ -179,6 +179,10 @@ static FRESULT read_prg_info(char *filename) {
     mcu_eeprom.dataofs = 0;
     mcu_eeprom.datalen = size;
 
+    if (*filename == '/') {
+        filename++; // skip leading slash
+    }
+
     for (uint8_t i = 0; i < sizeof(mcu_eeprom.filename); i++) {
       char src = *filename;
       if (src != 0) {

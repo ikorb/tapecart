@@ -353,7 +353,7 @@ int main(void) {
 
 #ifdef HAVE_SD
     if (old_mode == MODE_STREAM &&
-        !select_file("browser.prg") && !select_file("default.tcrt")) {
+        !select_file("/browser.prg") && !select_file("/default.tcrt")) {
       set_sense(true);
       delay_ms(500);
       continue;
@@ -392,7 +392,7 @@ int main(void) {
 
     if (debug_flags & DEBUGFLAG_BLINK_MAGIC)
       blink_value(shift_reg, 16);
- 
+
     /* check if a magic value handshake was received */
     switch (mode) {
     case MODE_LOADER:
@@ -406,7 +406,7 @@ int main(void) {
       delay_ms(1); // ensure that the motor signal can be turned off
       c64command_handler();
       break;
-      
+
     default:
       break;
     }
