@@ -5,13 +5,21 @@ TCRT and PRG files can be loaded using the Tapecart SD Browser (browser.prg) whi
 
 ![alt text](tapecart_sd_browser.png "Tapecart SD Browser")
 
-PD2 can be used for the tapecart LED. This pin is normally not connected on a Tapuino.
-
 Tapecart SD is not intended as a replacement for the Tapuino firmware, as there are no support for buttons and display
 or using TAP files. Ideally, I would have preferred to use the original hardware and just replaced the SPI flash
 with a SD card reader. However, the program flash in the microcontroller is too small for the FatFs library.
 
 Flash and loader write commands are not supported.
+
+## Hardware ##
+
+The Tapecart SD firmware should work on any Tapuino hardware.
+For the tapecart LED this can be connected to the PD2 pin which is normally not used on a Tapuino.
+
+![alt text](hardware/Tapecart-SD/pcb_top.jpg "Tapecart SD PCB")
+
+There is also also this special version without buttons and display made for the Tapecart SD by CapFuture1975.
+The gerber files for that version can be found under ![hardware/Tapecart-SD](hardware/Tapecart-SD)
 
 # tapecart #
 

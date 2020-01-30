@@ -28,3 +28,11 @@ different implementations of the tapecart:
     duotape is the main switch PCB, duotape-riser contains a layout
     for a really trivial adapter board in case you don't have a 3.96mm
     stripboard available.
+    
+# Tapecart SD hardware #
+
+* Tapecart-SD
+
+    A simple version of the Tapuino hardware without buttons and display
+    specially made for Tapecart SD by CapFuture1975.
+
