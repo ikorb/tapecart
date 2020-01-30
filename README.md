@@ -19,7 +19,7 @@ For the tapecart LED this can be connected to the PD2 pin which is normally not 
 ![alt text](hardware/Tapecart-SD/pcb_top.jpg "Tapecart SD PCB")
 
 There is also also this special version without buttons and display made for the Tapecart SD by CapFuture1975.
-The gerber files for that version can be found under ![hardware/Tapecart-SD](hardware/Tapecart-SD)
+The gerber files for that version can be found under [hardware/Tapecart-SD](hardware/Tapecart-SD)
 
 # tapecart #
 
