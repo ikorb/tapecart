@@ -233,7 +233,7 @@ static bool get_u8(uint8_t *result) {
 
 static bool get_u16(uint16_t *result) {
   int16_t tmp;
-  
+
   /* low byte */
   tmp = get_byte();
   if (tmp < 0)
@@ -251,7 +251,7 @@ static bool get_u16(uint16_t *result) {
 
 static bool get_u24(uint24 *result) {
   int16_t tmp;
-  
+
   /* low byte */
   tmp = get_byte();
   if (tmp < 0)
@@ -434,7 +434,7 @@ static void read_flash_fast(void) {
     return;
 
   end = addr + len;
-  
+
   /* send start address to EEPROM and switch to read mode */
   extmem_read_start(addr);
 
@@ -451,7 +451,7 @@ static void read_flash_fast(void) {
 
     send_byte_fast(tmp & 0xff);
   }
-  
+
   extmem_read_stop();
 }
 
@@ -467,7 +467,7 @@ static void crc32_flash(void) {
   uint24 addr, len;
   crc_t crc;
   uint8_t databuf[16];
-  
+
   /* receive parameters */
   if (get_u24(&addr))
     return;
@@ -492,7 +492,7 @@ static void crc32_flash(void) {
         extmem_read_stop();
         return;
       }
-      
+
       databuf[i] = tmp & 0xff;
     }
 
@@ -583,7 +583,7 @@ static void write_loadinfo(void) {
     return;
 
   eeprom_write_word(&mcu_eeprom.dataofs, val);
-  
+
   /* data length */
   if (get_u16(&val))
     return;
@@ -689,7 +689,7 @@ static void set_dirparams(void) {
 
   if (dir_name_len > 16)
     dir_name_len = 16;
-  
+
   get_u8(&dir_data_len);
 }
 
@@ -758,12 +758,22 @@ static void do_dir_lookup(void) {
     /* not found */
     send_byte(1);
   }
-  
+
  loop_end:
   extmem_read_stop();
 }
 
 #ifdef HAVE_SD
+static char to_petscii(char c) {
+  if (c >= 'a' && c <= 'z') {
+    c -= 0x20;
+  } else if (c >= 'A' && c <= 'Z') {
+    c += 0x20;
+  }
+
+  return c;
+}
+
 static void sd_open_dir(void) {
   /* parameters:
    *   16 byte dir name (null-terminated if shorter than 16 bytes)
@@ -813,7 +823,8 @@ static void sd_open_dir(void) {
   }
 
   for (uint8_t i = index; i < index + 16; i++) {
-    if (send_byte(new_dir[i]))
+    char c = to_petscii(new_dir[i]);
+    if (send_byte(c))
       return;
   }
 }
@@ -832,7 +843,7 @@ static void sd_read_dir(void) {
     return;
 
   for (uint16_t i = 0; max_files == 0 || i < max_files; i++) {
-    uint8_t file_type = 0;
+    uint8_t file_type = FILE_NONE;
     uint24 file_size = 0;
     FILINFO info;
     info.fname[0] = 0;
@@ -869,10 +880,11 @@ static void sd_read_dir(void) {
     send_byte_fast(*size_ptr);
 
     for (uint8_t l = 0; l < 16; l++) {
-      send_byte_fast(info.fname[l]);
+      char c = to_petscii(info.fname[l]);
+      send_byte_fast(c);
     }
 
-    if (file_type == 0)
+    if (file_type == FILE_NONE)
       break;
 
     if (check_abort())
@@ -938,7 +950,7 @@ static void command_handler(void) {
 
     if (debug_flags & DEBUGFLAG_BLINK_COMMAND)
       blink_value(cmd, 8);
-      
+
     switch (cmd) {
     case CMD_EXIT:
     default:
@@ -1073,7 +1085,7 @@ void c64command_handler(void) {
 
   set_led(true);
   set_read(false);
-  
+
   /* call command handler */
 #ifdef HAVE_UART
   send_byte      = c64_send_byte;
@@ -1096,7 +1108,7 @@ void uartcommand_handler(void) {
 
   debug_flags |= DEBUGFLAG_SEND_CMDOK;
   uart_clearbreak();
-  
+
   send_byte      = uart_send_byte;
   get_byte       = uart_get_byte;
   check_abort    = uart_checkbreak;
