@@ -45,7 +45,7 @@ static void printElement(uint16_t pos);
 static char linebuffer[SCREENW+1];
 static Directory *dir = NULL;
 static uint8_t textc = COLOR_LIGHTGREEN;
-static const char *program = "Tapecart SD Browser v1.2";
+static const char *program = "Tapecart SD Browser v1.3";
 
 #ifdef DIRH
 #undef DIRH
@@ -183,7 +183,8 @@ static void mainLoop(void)
                         {
                             changeDir(current->name);
                         }
-                        else if (current->type != FILE_UNKNOWN)
+                        else if (current->type == FILE_PRG ||
+                                 current->type == FILE_TCRT)
                         {
                             execute(current->name);
                         }
@@ -389,11 +390,7 @@ static void printNameSize(DirElement *element)
     {
       cprintf(" %-16s    DIR ", element->name);
     }
-    else if (element->type == FILE_UNKNOWN)
-    {
-        cprintf(" %-16s     -  ", element->name);
-    }
-    else
+    else if (element->type == FILE_PRG || element->type == FILE_TCRT)
     {
         uint32_t size = element->size;
         if (size >= 1024)
@@ -413,6 +410,10 @@ static void printNameSize(DirElement *element)
         {
             cprintf(" %-16s  %4lub ", element->name, element->size);
         }
+    }
+    else
+    {
+        cprintf(" %-16s     -  ", element->name);
     }
 }
 
@@ -480,9 +481,6 @@ static void printDir(void)
 static void printElement(uint16_t pos)
 {
     DirElement *current;
-    uint8_t page = 0;
-    uint16_t idx = 0;
-    uint16_t element = 0;
     uint16_t yoff = 0;
 
     if (dir->no_of_elements == 0)
