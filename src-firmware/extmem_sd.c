@@ -58,7 +58,7 @@ static file_t file_type;
 static bool use_starter;
 
 void extmem_init(void) {
-  file_type = 0;
+  file_type = FILE_NONE;
   use_starter = false;
   memset(&mcu_eeprom, 0xff, sizeof(mcu_eeprom_t));
 }
@@ -79,7 +79,8 @@ static bool compare_extension(char *ext1, const char *ext2) {
 
 uint8_t get_file_type(char *filename) {
   uint8_t length = 0;
-  uint8_t extension = 15;
+  uint8_t extension = 16;
+  uint8_t extension_length;
 
   for (; length < 16; length++) {
     uint8_t chr = filename[length];
@@ -92,7 +93,16 @@ uint8_t get_file_type(char *filename) {
     }
   }
 
-  if ((length - extension) >= 4) {
+  if (extension > length) {
+    extension = length;
+  }
+
+  extension_length = length - extension;
+  if (extension_length == 0) {
+    return FILE_PRG;  // treat extensionless files as PRG
+  }
+
+  if (extension_length >= 4) {
     filename += extension + 1;
 
     if (compare_extension(filename, "PRG")) {
@@ -101,14 +111,9 @@ uint8_t get_file_type(char *filename) {
     if (compare_extension(filename, "TCR")) {
       return FILE_TCRT;
     }
-#if 0 // Not supported
-    if (compare_extension(filename, "TAP")) {
-      return FILE_TAP;
+    if (compare_extension(filename, "SID")) {
+      return FILE_SID;
     }
-    if (compare_extension(filename, "D64")) {
-      return FILE_D64;
-    }
-#endif
   }
 
   return FILE_UNKNOWN;
@@ -116,9 +121,9 @@ uint8_t get_file_type(char *filename) {
 
 static FRESULT file_seek(uint24 address) {
   FRESULT fr = f_lseek(&file, address);
-  if(fr != FR_OK) {
+  if (fr != FR_OK) {
     f_close(&file);
-    file_type = 0;
+    file_type = FILE_NONE;
   }
 
   return fr;
@@ -132,8 +137,6 @@ static FRESULT read_tcrt_info(void) {
     UINT br;
     fr = f_read(&file, load_info, sizeof(load_info), &br);
     if (fr == FR_OK && br == sizeof(load_info)) {
-      file_type = FILE_TCRT;
-
       memcpy(&mcu_eeprom.dataofs, load_info, sizeof(mcu_eeprom.dataofs));
       memcpy(&mcu_eeprom.datalen, &load_info[2], sizeof(mcu_eeprom.datalen));
       memcpy(&mcu_eeprom.calladdr, &load_info[4], sizeof(mcu_eeprom.calladdr));
@@ -157,9 +160,34 @@ static FRESULT read_tcrt_info(void) {
   return fr;
 }
 
+static void set_loadinfo(char *filename, uint16_t size, uint16_t calladdr) {
+  if (*filename == '/') {
+    filename++; // skip leading slash
+  }
+
+  for (uint8_t i = 0; i < sizeof(mcu_eeprom.filename); i++) {
+    char src = *filename;
+    if (src != 0) {
+      if (src >= 'a' && src <= 'z') {
+        src -= 0x20;  // To uppercase
+      }
+      mcu_eeprom.filename[i] = src;
+      filename++;
+    } else {
+      mcu_eeprom.filename[i] = ' ';
+    }
+  }
+
+  mcu_eeprom.dataofs = 0;
+  mcu_eeprom.datalen = size;
+  mcu_eeprom.calladdr = calladdr;
+
+  FLASH_MEMCPY(mcu_eeprom.loadercode, default_loader, sizeof(default_loader));
+}
+
 static FRESULT read_prg_info(char *filename) {
   UINT br;
-  uint16_t load_addr;
+  uint16_t load_addr, calladdr;
 
   FSIZE_t size = f_size(&file);
   if (size > sizeof(load_addr) &&
@@ -169,35 +197,14 @@ static FRESULT read_prg_info(char *filename) {
     if (load_addr == 0x0801) {
       // add stub to auto start the PRG
       size += sizeof(basic_starter) - 2;
-      mcu_eeprom.calladdr = 0x801 - (sizeof(basic_starter) - 2);
+      calladdr = 0x801 - (sizeof(basic_starter) - 2);
       use_starter = true;
     } else {
-      mcu_eeprom.calladdr = load_addr;
+      calladdr = load_addr;
       use_starter = false;
     }
 
-    mcu_eeprom.dataofs = 0;
-    mcu_eeprom.datalen = size;
-
-    if (*filename == '/') {
-        filename++; // skip leading slash
-    }
-
-    for (uint8_t i = 0; i < sizeof(mcu_eeprom.filename); i++) {
-      char src = *filename;
-      if (src != 0) {
-        if (src >= 'a' && src <= 'z') {
-          src -= 0x20;  // To uppercase
-        }
-        mcu_eeprom.filename[i] = src;
-        filename++;
-      } else {
-        mcu_eeprom.filename[i] = ' ';
-      }
-    }
-
-    FLASH_MEMCPY(mcu_eeprom.loadercode, default_loader, sizeof(default_loader));
-    file_type = FILE_PRG;
+    set_loadinfo(filename, size, calladdr);
     return FR_OK;
   } else {
     f_close(&file);
@@ -205,11 +212,18 @@ static FRESULT read_prg_info(char *filename) {
   }
 }
 
+static FRESULT read_file_info(char *filename) {
+  FSIZE_t size = f_size(&file);
+  set_loadinfo(filename, size, 0x801);
+
+  return FR_OK;
+}
+
 static FRESULT open_file(char *filename) {
   FRESULT fr = f_open(&file, filename, FA_READ);
   if (fr == FR_OK) {
-    uint8_t file_type = get_file_type(filename);
-    switch (file_type) {
+    uint8_t type = get_file_type(filename);
+    switch (type) {
       case FILE_PRG:
         fr = read_prg_info(filename);
         break;
@@ -219,9 +233,12 @@ static FRESULT open_file(char *filename) {
         break;
 
       default:
-        fr = FR_INVALID_OBJECT;
-        f_close(&file);
+        fr = read_file_info(filename);
         break;
+    }
+
+    if (fr == FR_OK) {
+      file_type = type;
     }
   }
 
@@ -231,9 +248,9 @@ static FRESULT open_file(char *filename) {
 bool select_file(char *filename) {
   FRESULT fr = FR_OK;
 
-  if(file_type) {
+  if (file_type) {
     f_close(&file);
-    file_type = 0;
+    file_type = FILE_NONE;
   } else {
     fr = f_mount(&fat_fs, "", 1);
   }
@@ -247,6 +264,9 @@ bool select_file(char *filename) {
 
 void extmem_read_start(uint24 address) {
   switch (file_type) {
+    case FILE_NONE:
+      break;
+
     case FILE_PRG:
       if (use_starter) {
         if (address >= sizeof(basic_starter)) {
@@ -267,6 +287,7 @@ void extmem_read_start(uint24 address) {
       break;
 
     default:
+      file_seek(address);
       break;
   }
 }
@@ -276,9 +297,9 @@ static uint8_t read_byte_from_file(void) {
 
   UINT br;
   FRESULT fr = f_read(&file, &result, 1, &br);
-  if(fr != FR_OK) {
+  if (fr != FR_OK) {
     f_close(&file);
-    file_type = 0;
+    file_type = FILE_NONE;
   }
 
   return result;
@@ -288,6 +309,10 @@ uint8_t extmem_read_byte(bool last_byte) {
   uint8_t result;
 
   switch (file_type) {
+    case FILE_NONE:
+      result = 0xff;
+      break;
+
     case FILE_PRG:
       if (starter_index < sizeof(basic_starter)) {
         result = basic_starter[starter_index++];
@@ -296,12 +321,9 @@ uint8_t extmem_read_byte(bool last_byte) {
       }
       break;
 
-    case FILE_TCRT:
+    default:
       result = read_byte_from_file();
       break;
-
-    default:
-      result = 0xff;
   }
 
   return result;

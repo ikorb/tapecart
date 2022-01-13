@@ -43,8 +43,7 @@ typedef enum {
   FILE_PRG,
   FILE_TCRT,
 
-  FILE_TAP,
-  FILE_D64,
+  FILE_SID,
 
   FILE_UNKNOWN = 0xFF
 } file_t;
