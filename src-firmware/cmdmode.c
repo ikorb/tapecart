@@ -864,7 +864,7 @@ static void sd_read_dir(void) {
           if (info.fattrib & AM_DIR) {
             file_type = FILE_DIR;
           } else {
-            file_type = get_file_type(info.fname);
+            file_type = get_file_type(info.fname, 0);
           }
 
           file_size = (uint24)(0xFFFFFF & info.fsize);

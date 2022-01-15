@@ -48,13 +48,19 @@ typedef enum {
   FILE_UNKNOWN = 0xFF
 } file_t;
 
+typedef enum {
+  FILE_SUB_NONE = 0x00,
+
+  FILE_SUB_P00
+} file_sub_t;
+
 typedef struct {
   uint8_t type;
   uint24 size;
   char name[16];
 } file_info_t;
 
-uint8_t get_file_type(char *filename);
+uint8_t get_file_type(char *filename, uint8_t *sub_type);
 bool    select_file(char *filename);
 
 static inline uint8_t eeprom_read_byte(void *ptr) {

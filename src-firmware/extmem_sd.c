@@ -39,6 +39,8 @@
 #define TCRT_FLASH_CONTENT 216
 #define LOADER_VALID_FLAG 1
 
+#define P00_HEADER_SIZE 26
+
 static const FLASH uint8_t default_loader[171] = {
   #include "../src-c64/loader.h"
 };
@@ -55,10 +57,12 @@ static uint8_t starter_index;
 static FATFS fat_fs;
 static FIL file;
 static file_t file_type;
+static file_sub_t file_sub_type;
 static bool use_starter;
 
 void extmem_init(void) {
   file_type = FILE_NONE;
+  file_sub_type = FILE_SUB_NONE;
   use_starter = false;
   memset(&mcu_eeprom, 0xff, sizeof(mcu_eeprom_t));
 }
@@ -77,10 +81,9 @@ static bool compare_extension(char *ext1, const char *ext2) {
   return true;
 }
 
-uint8_t get_file_type(char *filename) {
+uint8_t get_file_type(char *filename, uint8_t *sub_type) {
   uint8_t length = 0;
   uint8_t extension = 16;
-  uint8_t extension_length;
 
   for (; length < 16; length++) {
     uint8_t chr = filename[length];
@@ -97,26 +100,32 @@ uint8_t get_file_type(char *filename) {
     extension = length;
   }
 
-  extension_length = length - extension;
-  if (extension_length == 0) {
-    return FILE_PRG;  // treat extensionless files as PRG
-  }
+  uint8_t type = FILE_UNKNOWN;
+  uint8_t sub = FILE_SUB_NONE;
 
-  if (extension_length >= 4) {
+  uint8_t extension_length = length - extension;
+  if (extension_length == 0) {
+    type = FILE_PRG;  // treat extensionless files as PRG
+  } else if (extension_length >= 4) {
     filename += extension + 1;
 
     if (compare_extension(filename, "PRG")) {
-      return FILE_PRG;
-    }
-    if (compare_extension(filename, "TCR")) {
-      return FILE_TCRT;
-    }
-    if (compare_extension(filename, "SID")) {
-      return FILE_SID;
+      type = FILE_PRG;
+    } else if (compare_extension(filename, "P00")) {
+      type = FILE_PRG;
+      sub = FILE_SUB_P00;
+    } else if (compare_extension(filename, "TCR")) {
+      type = FILE_TCRT;
+    } else if (compare_extension(filename, "SID")) {
+      type = FILE_SID;
     }
   }
 
-  return FILE_UNKNOWN;
+  if (sub_type) {
+    *sub_type = sub;
+  }
+
+  return type;
 }
 
 static FRESULT file_seek(uint24 address) {
@@ -190,6 +199,14 @@ static FRESULT read_prg_info(char *filename) {
   uint16_t load_addr, calladdr;
 
   FSIZE_t size = f_size(&file);
+  if (file_sub_type == FILE_SUB_P00) {
+    if (size > P00_HEADER_SIZE && f_lseek(&file, P00_HEADER_SIZE) == FR_OK) {
+      size -= P00_HEADER_SIZE;
+    } else {
+      size = 0;
+    }
+  }
+
   if (size > sizeof(load_addr) &&
       f_read(&file, &load_addr, sizeof(load_addr), &br) == FR_OK &&
       br == sizeof(load_addr)) {
@@ -222,7 +239,7 @@ static FRESULT read_file_info(char *filename) {
 static FRESULT open_file(char *filename) {
   FRESULT fr = f_open(&file, filename, FA_READ);
   if (fr == FR_OK) {
-    uint8_t type = get_file_type(filename);
+    uint8_t type = get_file_type(filename, &file_sub_type);
     switch (type) {
       case FILE_PRG:
         fr = read_prg_info(filename);
@@ -268,19 +285,26 @@ void extmem_read_start(uint24 address) {
       break;
 
     case FILE_PRG:
+    {
+      uint16_t file_offset = 0;
+      if (file_sub_type == FILE_SUB_P00) {
+        file_offset = P00_HEADER_SIZE;
+      }
+
       if (use_starter) {
         if (address >= sizeof(basic_starter)) {
           starter_index = sizeof(basic_starter);
-          file_seek((address - sizeof(basic_starter)) + 2);
+          file_seek((address - sizeof(basic_starter)) + 2 + file_offset);
         } else {
           starter_index = address;
-          file_seek(2);
+          file_seek(2 + file_offset);
         }
       } else {
         starter_index = sizeof(basic_starter);
-        file_seek(address);
+        file_seek(address + file_offset);
       }
       break;
+    }
 
     case FILE_TCRT:
       file_seek(address + TCRT_FLASH_CONTENT);
