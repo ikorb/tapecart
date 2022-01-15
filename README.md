@@ -1,12 +1,12 @@
 # Tapecart SD #
 
 This is a fork of tapecart that adds SD card support using the Tapuino hardware.
-TCRT and PRG files can be loaded using the Tapecart SD Browser (browser.prg) which should be placed in the root directory of the SD card.
+TCRT, PRG, and P00 files can be loaded using the Tapecart SD Browser (browser.prg) which should be placed in the root directory of the SD card.
 
 ![alt text](tapecart_sd_browser.png "Tapecart SD Browser")
 
 Tapecart SD is not intended as a replacement for the Tapuino firmware, as there are no support for buttons and display
-or using TAP files. Ideally, I would have preferred to use the original hardware and just replaced the SPI flash
+or using TAP files. Ideally, I would have preferred to use the original tapecart hardware and just replaced the SPI flash
 with a SD card reader. However, the program flash in the microcontroller is too small for the FatFs library.
 
 Flash and loader write commands are not supported.
