@@ -1,6 +1,6 @@
 # tapecart - a tape port storage pod for the C64
 #
-# Copyright (C) 2013-2017  Ingo Korb <ingo@akana.de>
+# Copyright (C) 2013-2022  Ingo Korb <ingo@akana.de>
 # All rights reserved.
 # Idea by enthusi
 #
@@ -29,7 +29,7 @@
 # Makefile: program construction rules
 #
 
-VERSION := 1.2
+VERSION := 1.2a
 
 CFLAGS  := -Oi -DVERSION=\"$(VERSION)\"
 ASFLAGS :=
