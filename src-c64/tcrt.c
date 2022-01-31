@@ -128,7 +128,7 @@ void write_tcrt(void) {
     /* page-erase cart */
     flash_offset += page_size * pages_erased;
     while (flash_offset < total_size) {
-      gotoxy(0, 8);
+      gotoxy(0, 9);
       cprintf("Erasing page %d [$%06lx]", flash_page, flash_offset);
 
       tapecart_erase_flashblock(flash_offset);
@@ -146,7 +146,7 @@ void write_tcrt(void) {
       if (bytesread > sizeof(databuffer))
         bytesread = sizeof(databuffer);
 
-      gotoxy(0, 8);
+      gotoxy(0, 9);
       cprintf("Erasing offset $%06lx", flash_offset);
 
       tapecart_write_flash(flash_offset, bytesread, databuffer);
