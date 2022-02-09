@@ -84,6 +84,8 @@ static inline void eeprom_write_word(void *ptr, uint16_t val) {
 }
 
 static inline void eeprom_safety(void) {}
-static inline void eeprom_flush_loader(void)   {}
-static inline void eeprom_flush_loadinfo(void) {}
+
+void eeprom_flush_loader(void);
+void eeprom_flush_loadinfo(void);
+
 #endif

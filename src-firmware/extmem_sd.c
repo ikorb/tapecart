@@ -35,7 +35,11 @@
 #include "extmem.h"
 #include "cmdmode.h"
 
+#define PAGE_MASK ((CONFIG_EXTMEM_SIZE - 1) & ~(CONFIG_EXTMEM_PAGE_SIZE - 1))
+
 #define TCRT_LOADINFO 18
+#define TCRT_LOADER_FLAG 40
+#define TCRT_FLASH_CONTENT_LENGTH 212
 #define TCRT_FLASH_CONTENT 216
 #define LOADER_VALID_FLAG 1
 
@@ -237,9 +241,17 @@ static FRESULT read_file_info(char *filename) {
 }
 
 static FRESULT open_file(char *filename) {
-  FRESULT fr = f_open(&file, filename, FA_READ);
+  FRESULT fr = FR_NO_FILE;
+  uint8_t type = get_file_type(filename, &file_sub_type);
+
+  if (type == FILE_TCRT) {
+    fr = f_open(&file, filename, FA_READ|FA_WRITE);
+  }
+  if (fr != FR_OK) {
+    fr = f_open(&file, filename, FA_READ);
+  }
+
   if (fr == FR_OK) {
-    uint8_t type = get_file_type(filename, &file_sub_type);
     switch (type) {
       case FILE_PRG:
         fr = read_prg_info(filename);
@@ -357,22 +369,94 @@ void extmem_read_stop(void) {
 }
 
 void extmem_write_start(uint24 address) {
-  /* not supported */
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  file_seek(address + TCRT_FLASH_CONTENT);
 }
 
 void extmem_write_byte(uint8_t byte) {
-  /* not supported */
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  UINT br;
+  f_write(&file, &byte, 1, &br);
 }
 
 void extmem_write_stop(void) {
-  /* not supported */
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  FSIZE_t size = f_size(&file);
+  uint32_t content_length = 0;
+  if (size > TCRT_FLASH_CONTENT) {
+    content_length = size - TCRT_FLASH_CONTENT;
+  }
+
+  FRESULT fr = file_seek(TCRT_FLASH_CONTENT_LENGTH);
+  if (fr == FR_OK) {
+    UINT br;
+    f_write(&file, &content_length, sizeof(content_length), &br);
+  }
+
+  f_sync(&file);
 }
 
 bool extmem_write_isbusy(void) {
-  /* not supported */
   return false;
 }
 
 void extmem_erase(uint24 address) {
-  /* not supported */
+  /* fake a page erase by filling it with 0xff */
+  uint16_t i;
+
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  extmem_write_start(address & PAGE_MASK);
+
+  for (i = 0; i < CONFIG_EXTMEM_ERASE_SIZE; i++) {
+    extmem_write_byte(0xff);
+  }
+
+  extmem_write_stop();
+}
+
+void eeprom_flush_loadinfo(void) {
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  FRESULT fr = file_seek(TCRT_LOADINFO);
+  if (fr == FR_OK) {
+    UINT br;
+    f_write(&file, &mcu_eeprom.dataofs, sizeof(mcu_eeprom.dataofs), &br);
+    f_write(&file, &mcu_eeprom.datalen, sizeof(mcu_eeprom.datalen), &br);
+    f_write(&file, &mcu_eeprom.calladdr, sizeof(mcu_eeprom.calladdr), &br);
+    f_write(&file, &mcu_eeprom.filename, sizeof(mcu_eeprom.filename), &br);
+    f_sync(&file);
+  }
+}
+
+void eeprom_flush_loader(void) {
+  if (file_type != FILE_TCRT) {
+    return;
+  }
+
+  FRESULT fr = file_seek(TCRT_LOADER_FLAG);
+  if (fr == FR_OK) {
+    UINT br;
+    uint8_t flag = 0;
+    if (mcu_eeprom.loadercode[0] != 0) {
+      flag = LOADER_VALID_FLAG;
+    }
+
+    f_write(&file, &flag, sizeof(flag), &br);
+    f_write(&file, &mcu_eeprom.loadercode, sizeof(mcu_eeprom.loadercode), &br);
+    f_sync(&file);
+  }
 }

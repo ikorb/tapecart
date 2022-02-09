@@ -9,7 +9,7 @@ Tapecart SD is not intended as a replacement for the Tapuino firmware, as there 
 or using TAP files. Ideally, I would have preferred to use the original tapecart hardware and just replaced the SPI flash
 with a SD card reader. However, the program flash in the microcontroller is too small for the FatFs library.
 
-Flash and loader write commands are not supported.
+Flash and loader write commands are supported for TCRT files.
 
 ## Hardware ##
 

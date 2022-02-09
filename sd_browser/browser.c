@@ -45,7 +45,7 @@ static void printElement(uint16_t pos);
 static char linebuffer[SCREENW+1];
 static Directory *dir = NULL;
 static uint8_t textc = COLOR_LIGHTGREEN;
-static const char *program = "Tapecart SD Browser v1.3";
+static const char *program = "Tapecart SD Browser v1.4";
 
 #ifdef DIRH
 #undef DIRH
@@ -446,35 +446,33 @@ static void printDir(void)
     {
         return;
     }
-    else
+
+    page = dir->selected/DIRH;
+    element = page*DIRH;
+    idx = 0;
+
+    while (element < dir->no_of_elements && idx < DIRH)
     {
-        page = dir->selected/DIRH;
-        element = page*DIRH;
-        idx = 0;
-
-        while (element < dir->no_of_elements && idx < DIRH)
+        current = dir->elements + element;
+        gotoxy(DIR1X+1, DIR1Y+1+idx);
+        if (element == dir->selected)
         {
-            current = dir->elements + element;
-            gotoxy(DIR1X+1, DIR1Y+1+idx);
-            if (element == dir->selected)
-            {
-                revers(1);
-            }
-
-            printNameSize(current);
-            revers(0);
-            textcolor(textc);
-
-          ++idx;
-          ++element;
+            revers(1);
         }
 
-        // clear empty lines
-        for (;idx < DIRH; idx++)
-        {
-            gotoxy(DIR1X+1, DIR1Y+1+idx);
-            cputs("                         ");
-        }
+        printNameSize(current);
+        revers(0);
+        textcolor(textc);
+
+        ++idx;
+        ++element;
+    }
+
+    // clear empty lines
+    for (;idx < DIRH; idx++)
+    {
+        gotoxy(DIR1X+1, DIR1Y+1+idx);
+        cputs("                         ");
     }
 }
 
@@ -487,22 +485,20 @@ static void printElement(uint16_t pos)
     {
         return;
     }
+
+    yoff = pos % DIRH;
+    gotoxy(DIR1X+1, DIR1Y+1+yoff);
+    if (pos == dir->selected)
+    {
+        revers(1);
+    }
     else
     {
-        yoff = pos % DIRH;
-        gotoxy(DIR1X+1, DIR1Y+1+yoff);
-        if (pos == dir->selected)
-        {
-            revers(1);
-        }
-        else
-        {
-            revers(0);
-        }
-
-        current = dir->elements + pos;
-        printNameSize(current);
         revers(0);
-        textcolor(textc);
     }
+
+    current = dir->elements + pos;
+    printNameSize(current);
+    revers(0);
+    textcolor(textc);
 }
