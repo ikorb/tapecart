@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "conutil.h"
+#include "fileselector.h"
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
@@ -48,6 +49,12 @@ static void write_datafile(void) {
   current_function = "Write data file";
   update_top_status();
 
+  select_file();
+  if (!fname[0])
+    return;
+
+  gotoxy(0, 3);
+  cprintf("File name   : [%-16s]", fname);
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
   flash_offset = read_uint(0, true, 7, 15, 4);
@@ -59,12 +66,6 @@ static void write_datafile(void) {
     cprintf("INFO: Flash will be erased from $%06lx",
             flash_offset & ~((long)page_size * erase_pages - 1L));
   }
-
-  memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  //             0123456789012345678901234567890123456789
-  cputsxy(0, 5, "File name   : [                        ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 15, 5, 39 - 15))
-    return;
 
   res = tc_cbm_open(fname);
   if (res != 0) {
@@ -169,9 +170,9 @@ static void write_custom_loader(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
   current_function = "Write custom loader";
   update_top_status();
-  //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
+
+  select_file();
+  if (!fname[0])
     return;
 
   res = tc_cbm_open(fname);

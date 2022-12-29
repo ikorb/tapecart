@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "conutil.h"
+#include "fileselector.h"
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
@@ -56,14 +57,10 @@ static struct {
 static uint32_t tcrt_flashsize;
 
 void write_tcrt(void) {
-  memset(fname, 0, FILENAME_BUFFER_LENGTH);
-
   current_function = "Write TCRT";
   update_top_status();
-
-  //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
+  select_file();
+  if (!fname[0])
     return;
 
   start_timing();

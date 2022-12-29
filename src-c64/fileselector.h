@@ -26,52 +26,17 @@
    SUCH DAMAGE.
 
 
-   conutil.h: a few convenient routines for a text mode user interface
+   fileselector.h: Fancy directory browser for file selection
 
 */
 
-#ifndef CONUTIL_H
-#define CONUTIL_H
+#ifndef FILESELECTOR_H
+#define FILESELECTOR_H
 
 #include <stdbool.h>
 #include <stdint.h>
 
-#define KEY_DEL    0x14
-#define KEY_INS    0x94
-#define KEY_UP     0x91
-#define KEY_DOWN   0x11
-#define KEY_LEFT   0x9d
-#define KEY_RIGHT  0x1d
-#define KEY_RETURN 0x0d
-#define KEY_STOP   0x03
-#define KEY_HOME   0x13
-#define KEY_CLR    0x93
-#define KEY_F1     0x85
-#define KEY_F2     0x89
-#define KEY_F3     0x86
-#define KEY_F4     0x8a
-#define KEY_F5     0x87
-#define KEY_F6     0x8b
-#define KEY_F7     0x88
-#define KEY_F8     0x8c
-
-#define STATUS_START 19
-
-#define RVS_ON 18
-
-extern bool input_aborted;
-
-bool read_string(char *buffer, unsigned char maxlen,
-                 unsigned char xpos, unsigned char ypos,
-                 unsigned char displaylen);
-uint32_t read_uint(uint32_t preset, bool hex, unsigned char width,
-                   unsigned char xpos, unsigned char ypos);
-unsigned char show_menu(unsigned char count, const char **items, unsigned char sel,
-                        unsigned char xpos, unsigned char ypos);
-void wait_key(void);
-
-void clear_mainarea(void); // keeps status intact
-void clear_mainarea_full(void); // also clears status
-void clear_largearea(void); // everything below the header
+// returns name in global fname, empty if aborted
+void select_file(void);
 
 #endif

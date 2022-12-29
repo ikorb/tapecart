@@ -341,3 +341,10 @@ void clear_mainarea_full(void) {
     cclearxy(0, i, 40);
 }
 
+void clear_largearea(void) {
+  unsigned int i;
+
+  for (i = 2; i < 25; ++i)
+    cclearxy(0, i, 40);
+}
+

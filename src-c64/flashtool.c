@@ -43,6 +43,7 @@
 #include "debugmenu.h"
 #include "drivemenu.h"
 #include "eload.h"
+#include "fileselector.h"
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
@@ -209,12 +210,10 @@ static char ch;
 static void write_onefiler(void) {
   size_t i;
 
-  memset(fname, 0, FILENAME_BUFFER_LENGTH);
   current_function = "Write onefiler";
   update_top_status();
-  //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
+  select_file();
+  if (!fname[0])
     return;
 
   res = tc_cbm_open(fname);

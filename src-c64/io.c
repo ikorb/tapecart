@@ -33,9 +33,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "eload.h"
+#include "globals.h"
 #include "io.h"
 
 uint8_t drive_type;
+bool drive_supports_subdirs;
 static unsigned long reuSize;
 static unsigned long reufilepos;
 
@@ -110,11 +112,25 @@ void __fastcall__ check_fastloader_capability(void) {
   }
 
   drive_type = eload_set_drive_check_fastload(CURRENT_DEVICE);
+  if (drive_type == DRIVETYPE_FD ||
+      drive_type == DRIVETYPE_HD ||
+      drive_type == DRIVETYPE_SD2IEC ||
+      drive_type == DRIVETYPE_VICE) {
+    drive_supports_subdirs = true;
+  } else {
+    drive_supports_subdirs = false;
+  }
 
   // try to avoid occasional "disk id mismatch" errors
   if (drive_type != DRIVETYPE_NOT_PRESENT) {
     send_initialize();
   }
+}
+
+void __fastcall__ set_current_device(uint8_t dev) {
+  CURRENT_DEVICE = dev;
+  check_fastloader_capability();
+  update_top_status();
 }
 
 void __fastcall__ send_initialize(void) {

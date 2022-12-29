@@ -38,6 +38,7 @@
 
 #define CURRENT_DEVICE (*((unsigned char*)0xba))
 
+void __fastcall__ set_current_device(uint8_t dev);
 void __fastcall__ send_initialize(void);
 
 // see eload/src/drivetype.s
@@ -53,6 +54,7 @@ void __fastcall__ send_initialize(void);
 #define DRIVETYPE_VICE        9
 
 extern uint8_t drive_type;
+extern bool drive_supports_subdirs;
 
 unsigned char __fastcall__ tc_cbm_open(const char * name);
 void          __fastcall__ tc_cbm_close(void);

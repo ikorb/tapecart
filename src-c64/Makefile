@@ -44,7 +44,7 @@ else
  E := @echo
 endif
 
-FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c drivemenu.c utils.c
+FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c drivemenu.c utils.c fileselector.c
 FLASHTOOL_ASRC := minidelay.s getbyte_fast.s blockwrite.s todinit.s
 
 # calculate object file names

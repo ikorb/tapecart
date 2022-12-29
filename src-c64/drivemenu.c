@@ -56,9 +56,7 @@ static void change_device(void) {
       return;
   } while ((newdevice != 0 && newdevice < 4) || newdevice > 30);
 
-  CURRENT_DEVICE = newdevice;
-  check_fastloader_capability();
-  update_top_status();
+  set_current_device(newdevice);
 }
 
 static void send_command(void) {
