@@ -44,8 +44,8 @@ else
  E := @echo
 endif
 
-FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c drivemenu.c
-FLASHTOOL_ASRC := minidelay.s getbyte_fast.s blockwrite.s
+FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c drivemenu.c utils.c
+FLASHTOOL_ASRC := minidelay.s getbyte_fast.s blockwrite.s todinit.s
 
 # calculate object file names
 FLASHTOOL_OBJ  := $(FLASHTOOL_CSRC:.c=.o65) $(FLASHTOOL_ASRC:.s=.o65)
@@ -55,7 +55,7 @@ all: loader.bin flashtool.prg
 
 flashtool.prg: $(FLASHTOOL_OBJ)
 	$(E) "  LINK   $@"
-	$(Q)ld65 -o $@ -t $(SYSTEM) $^ $(SYSTEM).lib
+	$(Q)ld65 -m flashtool.map -o $@ -t $(SYSTEM) $^ $(SYSTEM).lib
 
 %.s: %.c
 	$(E) "  CC     $<"

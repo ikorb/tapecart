@@ -37,6 +37,7 @@
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
+#include "utils.h"
 #include "tcrt.h"
 
 const uint8_t tcrt_header[] = {
@@ -63,6 +64,8 @@ void write_tcrt(void) {
   cputsxy(0, 4, "File name: [                           ]");
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
+
+  start_timing();
 
   res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
   if (res != 0) {
@@ -154,7 +157,8 @@ void write_tcrt(void) {
     }
   }
 
-  cputsxy(2, STATUS_START - 2, "Write successful");
+  cputsxy(2, STATUS_START - 2, "Write completed in ");
+  print_timing();
 
  fail:
   tc_cbm_close(CBM_LFN);

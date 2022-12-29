@@ -46,6 +46,7 @@
 #include "io.h"
 #include "tapecartif.h"
 #include "tcrt.h"
+#include "utils.h"
 
 const uint8_t default_loader[LOADER_LENGTH] = {
   #include "loader.h"
@@ -251,6 +252,8 @@ static void write_onefiler(void) {
   databuffer[0] = loadaddr & 0xff;
   databuffer[1] = loadaddr >> 8;
 
+  start_timing();
+
   /* erase first block */
   pages_erased = 0;
   if (erase_pages) {
@@ -281,7 +284,8 @@ static void write_onefiler(void) {
 
   tapecart_write_loadinfo(0, flash_offset, calladdr, fname);
 
-  cputsxy(2, STATUS_START - 2, "Write successful");
+  cputsxy(2, STATUS_START - 2, "Write completed in ");
+  print_timing();
 
  fail:
   tc_cbm_close(CBM_LFN);
@@ -342,6 +346,8 @@ int main(void) {
   bordercolor(COLOR_GRAY1);
   bgcolor(COLOR_GRAY1);
   textcolor(COLOR_WHITE);
+
+  init_timing();
 
   current_device = *((unsigned char *)0xba);
   if (current_device < 4 || current_device > 30)
