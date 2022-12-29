@@ -29,7 +29,7 @@
 # Makefile: program construction rules
 #
 
-VERSION := 1.2a
+VERSION := 1.3
 
 CFLAGS  := -Oi -DVERSION=\"$(VERSION)\" -Ieload/src
 ASFLAGS :=
