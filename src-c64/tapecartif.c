@@ -302,15 +302,21 @@ void tapecart_read_flash_fast(uint32_t offset, uint16_t len, void *data) {
 }
 
 void tapecart_write_flash(uint32_t offset, uint16_t len, const void *data) {
-  uint16_t i;
   const uint8_t *bytedata = (const uint8_t *)data;
 
   tapecart_sendbyte(CMD_WRITE_FLASH);
   tapecart_send_u24(offset);
   tapecart_send_u16(len);
 
-  for (i = 0; i < len; ++i) {
-    tapecart_sendbyte(*bytedata++);
+  while (len > 0) {
+    uint16_t blklen = len;
+    if (blklen > 256) {
+      blklen = 256;
+    }
+
+    tapecart_sendblock(bytedata, blklen & 0xff);
+    len -= blklen;
+    bytedata += blklen;
   }
 }
 
@@ -334,12 +340,8 @@ void tapecart_read_loader(uint8_t *data) {
 }
 
 void tapecart_write_loader(const uint8_t *data) {
-  uint8_t i;
-
   tapecart_sendbyte(CMD_WRITE_LOADER);
-  for (i = 0; i < LOADER_LENGTH; ++i) {
-    tapecart_sendbyte(data[i]);
-  }
+  tapecart_sendblock(data, LOADER_LENGTH);
 }
 
 void tapecart_read_loadinfo(uint16_t *offset, uint16_t *length, uint16_t *calladdr, char *filename) {

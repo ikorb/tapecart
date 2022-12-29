@@ -45,7 +45,7 @@ else
 endif
 
 FLASHTOOL_CSRC := flashtool.c tapecartif.c conutil.c debugmenu.c advancedmenu.c tcrt.c io.c drivemenu.c
-FLASHTOOL_ASRC := minidelay.s getbyte_fast.s
+FLASHTOOL_ASRC := minidelay.s getbyte_fast.s blockwrite.s
 
 # calculate object file names
 FLASHTOOL_OBJ  := $(FLASHTOOL_CSRC:.c=.o65) $(FLASHTOOL_ASRC:.s=.o65)

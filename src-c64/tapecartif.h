@@ -46,6 +46,8 @@ void     tapecart_sendbyte(uint8_t byte);
 uint8_t  tapecart_getbyte(void);
 uint8_t  tapecart_getbyte_fast(void);
 
+void __fastcall__ tapecart_sendblock(void* data, uint8_t length); // length 0 means 256 bytes
+
 void     tapecart_send_u24(uint32_t value);
 void     tapecart_send_u16(uint16_t value);
 
