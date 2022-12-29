@@ -47,7 +47,7 @@
 #define KEY_HOME   0x13
 #define KEY_CLR    0x93
 
-#define STATUS_START 18
+#define STATUS_START 19
 
 #define RVS_ON 18
 

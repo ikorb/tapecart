@@ -111,7 +111,7 @@ void update_status(void) {
 
 void display_status(void) {
   chlinexy(0, STATUS_START, 40);
-  cputsxy(0, STATUS_START+1, "Current tapecart status:\r\n");
+  cputsxy(0, STATUS_START, "\0263Current tapecart status:\0253\r\n");
 
   if (tc_loadinfo_offset != 0xffff) {
     cprintf("  Data start       $%04x\r\n", tc_loadinfo_offset);
