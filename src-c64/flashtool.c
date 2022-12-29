@@ -78,19 +78,18 @@ long          flash_offset;
 uint16_t      flash_page, pages_erased;
 size_t        len;
 unsigned char res;
+uint8_t       iglobal;
 
 void update_status(void) {
-  uint8_t i;
-
   /* read size info */
   tapecart_read_sizes(&total_size, &page_size, &erase_pages);
 
   /* read data offset/length and file name */
   tapecart_read_loadinfo(&tc_loadinfo_offset, &tc_loadinfo_length, &tc_loadinfo_calladdr, tc_fname);
 
-  for (i = 0; i < FILENAME_LENGTH; ++i) {
-    if (tc_fname[i] < 32 || (tc_fname[i] >= 128 && tc_fname[i] <= 159))
-      tc_fname[i] = '?';
+  for (iglobal = 0; iglobal < FILENAME_LENGTH; ++iglobal) {
+    if (tc_fname[iglobal] < 32 || (tc_fname[iglobal] >= 128 && tc_fname[iglobal] <= 159))
+      tc_fname[iglobal] = '?';
   }
   tc_fname[FILENAME_LENGTH] = 0;
 
@@ -101,11 +100,11 @@ void update_status(void) {
   loader_is_blank = true;
   loader_is_default = true;
 
-  for (i = 0; i < LOADER_LENGTH; ++i) {
-    tc_loader_chksum += databuffer[i];
-    if (databuffer[i] != 0xff)
+  for (iglobal = 0; iglobal < LOADER_LENGTH; ++iglobal) {
+    tc_loader_chksum += databuffer[iglobal];
+    if (databuffer[iglobal] != 0xff)
       loader_is_blank = false;
-    if (databuffer[i] != default_loader[i])
+    if (databuffer[iglobal] != default_loader[iglobal])
       loader_is_default = false;
   }
 }

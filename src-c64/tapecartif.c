@@ -36,9 +36,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <peekpoke.h>
+#include "globals.h"
 #include "minidelay.h"
 #include "tapecartif.h"
 
+static uint8_t ilocal; // loop counter for leaf functions in this file
 
 #define CPUPORT_nMOTOR (1 << 5)
 #define CPUPORT_SENSE  (1 << 4)
@@ -100,8 +102,6 @@ static uint8_t dummy_variable;
 
 /* assumed initial state: write low */
 void tapecart_sendbyte(uint8_t byte) {
-  uint8_t i;
-
   SEI();
 
   /* wait until tapecart is ready (sense high) */
@@ -111,7 +111,7 @@ void tapecart_sendbyte(uint8_t byte) {
   CPUDDR = 0x2f | CPUPORT_SENSE;
   
   /* send byte */
-  for (i = 0; i < 8; ++i) {
+  for (ilocal = 0; ilocal < 8; ++ilocal) {
     cpuport_sense(byte & 0x80);
 
     cpuport_write_high();
@@ -137,7 +137,7 @@ void tapecart_sendbyte(uint8_t byte) {
 
 /* assumed initial state: write output low, sense input */
 uint8_t tapecart_getbyte(void) {
-  uint8_t byte, i;
+  uint8_t byte;
 
   SEI();
 
@@ -149,7 +149,7 @@ uint8_t tapecart_getbyte(void) {
   tinydelay();
 
   /* read byte */
-  for (i = 0; i < 8; ++i) {
+  for (ilocal = 0; ilocal < 8; ++ilocal) {
     cpuport_write_low();
     cpuport_write_high();
 
@@ -201,7 +201,6 @@ uint16_t tapecart_get_u16(void) {
 
 bool tapecart_cmdmode(void) {
   uint16_t cmdcode = TAPECART_CMDMODE_MAGIC;
-  unsigned char i;
   unsigned int timeout;
 
   /* ensure the cart is in stream mode */
@@ -222,7 +221,7 @@ bool tapecart_cmdmode(void) {
   cpuport_motor_off();
   minidelay();
 
-  for (i = 0; i < 16; ++i) {
+  for (ilocal = 0; ilocal < 16; ++ilocal) {
     cpuport_write(!!(cmdcode & 0x8000));
     cmdcode <<= 1;
 
@@ -245,7 +244,7 @@ bool tapecart_cmdmode(void) {
 
   /* wait for 100 pulses on read */
   minidelay();
-  for (i = 0; i < 100; ++i) {
+  for (ilocal = 0; ilocal < 100; ++ilocal) {
     dummy_variable = CIA1.icr;
     timeout = PULSE_LOOP_TIMEOUT;
     while (timeout > 0 && !(CIA1.icr & CIA_ICR_FLAG))
@@ -331,10 +330,8 @@ void tapecart_erase_64k(uint32_t offset) {
 }
 
 void tapecart_read_loader(uint8_t *data) {
-  uint8_t i;
-
   tapecart_sendbyte(CMD_READ_LOADER);
-  for (i = 0; i < LOADER_LENGTH; ++i) {
+  for (iglobal = 0; iglobal < LOADER_LENGTH; ++iglobal) {
     *data++ = tapecart_getbyte();
   }
 }
@@ -345,15 +342,13 @@ void tapecart_write_loader(const uint8_t *data) {
 }
 
 void tapecart_read_loadinfo(uint16_t *offset, uint16_t *length, uint16_t *calladdr, char *filename) {
-  uint8_t  i;
-  
   tapecart_sendbyte(CMD_READ_LOADINFO);
 
   *offset   = tapecart_get_u16();
   *length   = tapecart_get_u16();
   *calladdr = tapecart_get_u16();
 
-  for (i = 0; i < FILENAME_LENGTH; ++i) {
+  for (iglobal = 0; iglobal < FILENAME_LENGTH; ++iglobal) {
     *filename++ = tapecart_getbyte();
   }
 }
@@ -362,15 +357,13 @@ void tapecart_write_loadinfo(const uint16_t offset,
                              const uint16_t length,
                              const uint16_t calladdr,
                              const char    *filename) {
-  uint8_t i;
-
   tapecart_sendbyte(CMD_WRITE_LOADINFO);
 
   tapecart_send_u16(offset);
   tapecart_send_u16(length);
   tapecart_send_u16(calladdr);
 
-  for (i = 0; i < FILENAME_LENGTH; ++i) {
+  for (iglobal = 0; iglobal < FILENAME_LENGTH; ++iglobal) {
     tapecart_sendbyte(*filename++);
   }
 }

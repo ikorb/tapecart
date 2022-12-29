@@ -58,6 +58,7 @@ extern long          flash_offset;
 extern uint16_t      flash_page, pages_erased;
 extern size_t        len;
 extern unsigned char res;
+extern uint8_t       iglobal;
 
 void update_status(void);
 void display_status(void);
