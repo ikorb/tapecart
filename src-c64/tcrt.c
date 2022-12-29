@@ -129,6 +129,7 @@ void write_tcrt(void) {
   /* erase remaining space in cart */
   if (erase_pages) {
     /* page-erase cart */
+    flash_offset += page_size - (flash_offset % page_size); // round up to start of next page
     flash_offset += page_size * pages_erased;
     while (flash_offset < total_size) {
       gotoxy(0, 9);
