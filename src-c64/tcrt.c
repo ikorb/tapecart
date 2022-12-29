@@ -67,13 +67,13 @@ void write_tcrt(void) {
 
   start_timing();
 
-  res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
+  res = tc_cbm_open(fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
   }
 
-  bytesread = tc_cbm_read(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
+  bytesread = tc_cbm_read(databuffer, TCRT_OFFSET_FLASHDATA);
   if (bytesread != TCRT_OFFSET_FLASHDATA) {
     gotoxy(2, STATUS_START - 2);
     cprintf("Error: Read only %d byte from the file", len);
@@ -161,7 +161,7 @@ void write_tcrt(void) {
   print_timing();
 
  fail:
-  tc_cbm_close(CBM_LFN);
+  tc_cbm_close();
 }
 
 
@@ -177,7 +177,7 @@ void dump_tcrt(void) {
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
-  res = tc_cbm_open(CBM_LFN, current_device, 1, fname);
+  res = cbm_open(CBM_LFN, CURRENT_DEVICE, 1, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open file");
     return;
@@ -199,10 +199,10 @@ void dump_tcrt(void) {
 
   memcpy(databuffer + TCRT_OFFSET_FLASHLENGTH, &total_size, sizeof(total_size));
 
-  byteswritten = tc_cbm_write(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
+  byteswritten = cbm_write(CBM_LFN, databuffer, TCRT_OFFSET_FLASHDATA);
   if (byteswritten != TCRT_OFFSET_FLASHDATA) {
     cputsxy(2, STATUS_START - 2, "Failed to write to file");
-    tc_cbm_close(CBM_LFN);
+    cbm_close(CBM_LFN);
     return;
   }
 

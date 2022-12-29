@@ -31,7 +31,7 @@
 
 VERSION := 1.2
 
-CFLAGS  := -Oi -DVERSION=\"$(VERSION)\"
+CFLAGS  := -Oi -DVERSION=\"$(VERSION)\" -Ieload/src
 ASFLAGS :=
 SYSTEM  := c64
 
@@ -53,9 +53,9 @@ FLASHTOOL_OBJ  := $(FLASHTOOL_CSRC:.c=.o65) $(FLASHTOOL_ASRC:.s=.o65)
 all: loader.bin flashtool.prg
 	$(Q)ls -l loader.bin
 
-flashtool.prg: $(FLASHTOOL_OBJ)
+flashtool.prg: $(FLASHTOOL_OBJ) eload/eload.lib flashtool.cfg
 	$(E) "  LINK   $@"
-	$(Q)ld65 -m flashtool.map -o $@ -t $(SYSTEM) $^ $(SYSTEM).lib
+	$(Q)ld65 -m flashtool.map -o $@ -C flashtool.cfg $(FLASHTOOL_OBJ) eload/eload.lib $(SYSTEM).lib
 
 %.s: %.c
 	$(E) "  CC     $<"
@@ -73,11 +73,16 @@ loader.bin: loader.asm
 	$(E) "  XA     $<"
 	$(Q)xa -M -o $@ $<
 
+eload/eload.lib:
+	$(E) "  MAKE eload.lib"
+	$(Q)$(MAKE) -C eload eload.lib
+
 clean:
 	$(E) "  CLEAN"
 	$(Q)rm -f loader.bin
 	$(Q)rm -f $(FLASHTOOL_OBJ)
 	$(Q)rm -f flashtool.prg
+	$(Q)$(MAKE) -C eload clean
 
 # incomplete set of manual dependencies
 flashtool.o65: loader.h tapecartif.h conutil.h

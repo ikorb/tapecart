@@ -33,12 +33,28 @@
 #ifndef IO_H
 #define IO_H
 
-unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
-                                       unsigned char sec_addr, const char * name);
-void          __fastcall__ tc_cbm_close(unsigned char lfn);
-int           __fastcall__ tc_cbm_read(unsigned char lfn, void * buffer,
-                                       unsigned int size);
-int           __fastcall__ tc_cbm_write(unsigned char lfn, const void * buffer,
-                                        unsigned int size);
+#include <stdbool.h>
+#include <stdint.h>
+
+#define CURRENT_DEVICE (*((unsigned char*)0xba))
+
+// see eload/src/drivetype.s
+#define DRIVETYPE_NOT_PRESENT 0
+#define DRIVETYPE_UNKNOWN     1
+#define DRIVETYPE_1541        2
+#define DRIVETYPE_1570        3
+#define DRIVETYPE_1571        4
+#define DRIVETYPE_1581        5
+#define DRIVETYPE_FD          6
+#define DRIVETYPE_HD          7
+#define DRIVETYPE_SD2IEC      8
+#define DRIVETYPE_VICE        9
+
+extern uint8_t drive_type;
+
+unsigned char __fastcall__ tc_cbm_open(const char * name);
+void          __fastcall__ tc_cbm_close(void);
+int           __fastcall__ tc_cbm_read(void * buffer, unsigned int size);
+void          __fastcall__ check_fastloader_capability(void);
 
 #endif

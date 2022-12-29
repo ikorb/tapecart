@@ -32,12 +32,12 @@
 #include <conio.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "eload.h"
 #include "io.h"
 
-static signed char   reuLfn = -1;
+uint8_t drive_type;
 static unsigned long reuSize;
 static unsigned long reufilepos;
-
 
 /* Copy 'size' bytes from REU memory starting at page 'page' offset 'offset' to 'dst' */
 static void transfer_from_reu(unsigned long src, unsigned short int size, void *dst) {
@@ -62,17 +62,11 @@ static void transfer_from_reu(unsigned long src, unsigned short int size, void *
   }
 }
 
-/* cbm_open wrapper with reu support, use "r:" as filename to access reu */
-unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
-                                       unsigned char sec_addr, const char *name) {
-  if (device) {
-    return cbm_open(lfn, device, sec_addr, name);
+/* cbm_open wrapper with reu support, use device 0 to access REU */
+unsigned char __fastcall__ tc_cbm_open(const char *name) {
+  if (CURRENT_DEVICE) {
+    return eload_open_read(name);
   } else {
-    if (reuLfn != -1) {
-      return 1;
-    }
-
-    reuLfn     = lfn;
     reufilepos = 0;
 
     transfer_from_reu(0, 4, &reuSize);
@@ -82,18 +76,16 @@ unsigned char __fastcall__ tc_cbm_open(unsigned char lfn, unsigned char device,
 }
 
 /* cbm_close wrapper with reu support */
-void __fastcall__ tc_cbm_close(unsigned char lfn) {
-  if (lfn == reuLfn) {
-    reuLfn = -1;
-  } else {
-    cbm_close(lfn);
+void __fastcall__ tc_cbm_close(void) {
+  if (CURRENT_DEVICE) {
+    eload_close();
   }
 }
 
 /* cbm_read wrapper with reu support */
-int __fastcall__ tc_cbm_read(unsigned char lfn, void *buffer, unsigned int size) {
-  if (lfn != reuLfn) {
-    return cbm_read(lfn, buffer, size);
+int __fastcall__ tc_cbm_read(void *buffer, unsigned int size) {
+  if (CURRENT_DEVICE) {
+    return eload_read(buffer, size);
   }
 
   if (size > reuSize - reufilepos) {
@@ -111,12 +103,11 @@ int __fastcall__ tc_cbm_read(unsigned char lfn, void *buffer, unsigned int size)
   return size;
 }
 
-/* cbm_write with reu support - without reu write support */
-int __fastcall__ tc_cbm_write(unsigned char lfn, const void *buffer,
-                              unsigned int size) {
-  if (lfn != reuLfn) {
-    return cbm_write(lfn, buffer, size);
+void __fastcall__ check_fastloader_capability(void) {
+  if (CURRENT_DEVICE == 0) {
+    drive_type = DRIVETYPE_UNKNOWN;
+    return;
   }
 
-  return 0;
+  drive_type = eload_set_drive_check_fastload(CURRENT_DEVICE);
 }

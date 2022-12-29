@@ -36,11 +36,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "conutil.h"
+#include "eload.h"
 #include "globals.h"
+#include "io.h"
 #include "drivemenu.h"
 
 static void change_device(void) {
-  unsigned char newdevice = current_device;
+  unsigned char newdevice = CURRENT_DEVICE;
   
   cputsxy(9, 2, "Change current device");
   cputsxy(0, 10, "Enter 0 to select REU");
@@ -52,12 +54,13 @@ static void change_device(void) {
       return;
   } while ((newdevice != 0 && newdevice < 4) || newdevice > 30);
 
-  current_device = newdevice;
+  CURRENT_DEVICE = newdevice;
+  check_fastloader_capability();
   display_devicenum();
 }
 
 static void send_command(void) {
-  if (current_device == 0) {
+  if (CURRENT_DEVICE == 0) {
     cputsxy(2, STATUS_START - 2, "Cannot send commands to a REU!");
     return;
   }
@@ -69,7 +72,7 @@ static void send_command(void) {
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 10, 4, 39 - 10))
     return;
 
-  res = cbm_open(15, current_device, 15, fname);
+  res = cbm_open(15, CURRENT_DEVICE, 15, fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to send command");
     return;
@@ -86,12 +89,12 @@ static uint8_t *bufptr;
 static void show_directory(void) {
   unsigned char line = 0;
 
-  if (current_device == 0) {
+  if (CURRENT_DEVICE == 0) {
     cputsxy(2, STATUS_START - 2, "Cannot show directory of a REU!");
     return;
   }
 
-  res = cbm_open(CBM_LFN, current_device, 0, "$");
+  res = cbm_open(CBM_LFN, CURRENT_DEVICE, 0, "$");
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open directory");
     return;
@@ -166,7 +169,8 @@ static const char *drive_menu_text[] = {
   "1. Change current device",
   "2. Send command",
   "3. Show directory",
-  "4. Return to main menu",
+  "4. Toggle fastloader",
+  "5. Return to main menu",
 };
 
 void drive_menu(void) {
@@ -191,7 +195,18 @@ void drive_menu(void) {
       show_directory();
       break;
 
-    case 3:
+    case 3: // toggle fastloader
+      if (CURRENT_DEVICE) {
+        if (eload_drive_is_fast()) {
+          eload_set_drive_disable_fastload(CURRENT_DEVICE);
+        } else {
+          eload_set_drive_check_fastload(CURRENT_DEVICE);
+        }
+      }
+      display_devicenum();
+      break;
+
+    case 4:
       return;
     }
   }

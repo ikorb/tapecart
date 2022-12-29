@@ -42,6 +42,7 @@
 #include "conutil.h"
 #include "debugmenu.h"
 #include "drivemenu.h"
+#include "eload.h"
 #include "globals.h"
 #include "io.h"
 #include "tapecartif.h"
@@ -66,7 +67,6 @@ uint16_t erase_pages;
 
 char fname[FILENAME_BUFFER_LENGTH];
 char strbuf[16];
-unsigned char current_device;
 
 long          flash_offset;
 uint16_t      flash_page, pages_erased;
@@ -140,13 +140,12 @@ void display_status(void) {
 
 }
 
-
 void display_devicenum(void) {
-  gotoxy(27, STATUS_START);
-  if (current_device) {
-    cprintf("\0263Device: %02d\0253", current_device);
+  gotoxy(22, STATUS_START);
+  if (CURRENT_DEVICE) {
+    cprintf("\0263Device: %02d/%s\0253", CURRENT_DEVICE, eload_drive_is_fast() ? "fast" : "slow");
   } else {
-    cprintf("\0263Device:REU\0253");
+    cprintf("\0300\0300\0300\0300\0263Device: REU\0253");
   }
 }
 
@@ -162,7 +161,7 @@ bool write_file(long limit) {
     if (limit >= 0 && to_read > limit)
       to_read = limit;
 
-    len = tc_cbm_read(CBM_LFN, databuffer, to_read);
+    len = tc_cbm_read(databuffer, to_read);
 
     if (len > 0) {
       if (erase_pages && pages_erased == 0) {
@@ -204,13 +203,13 @@ static void write_onefiler(void) {
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
     return;
 
-  res = tc_cbm_open(CBM_LFN, current_device, 0, fname);
+  res = tc_cbm_open(fname);
   if (res != 0) {
     cputsxy(2, STATUS_START - 2, "Failed to open data file");
     return;
   }
 
-  len = tc_cbm_read(CBM_LFN, &loadaddr, 2);
+  len = tc_cbm_read(&loadaddr, 2);
   if (len != 2) {
     cputsxy(2, STATUS_START - 2, "Failed to read load address");
     goto fail;
@@ -264,7 +263,7 @@ static void write_onefiler(void) {
   }
 
   /* read remainder of first block into buffer */
-  len = tc_cbm_read(CBM_LFN, databuffer + flash_offset, page_size - flash_offset);
+  len = tc_cbm_read(databuffer + flash_offset, page_size - flash_offset);
 
   /* write it */
   gotoxy(0, 9);
@@ -288,7 +287,7 @@ static void write_onefiler(void) {
   print_timing();
 
  fail:
-  tc_cbm_close(CBM_LFN);
+  tc_cbm_close();
 }
 
 
@@ -349,12 +348,13 @@ int main(void) {
 
   init_timing();
 
-  current_device = *((unsigned char *)0xba);
-  if (current_device < 4 || current_device > 30)
-    current_device = 8;
+  if (CURRENT_DEVICE < 4 || CURRENT_DEVICE > 30)
+    CURRENT_DEVICE = 8;
+
+  check_fastloader_capability();
 
   clrscr();
-  cputs("tapecart-tool v" VERSION " by Ingo Korb");
+  cputs("tapecart flashtool v" VERSION " by Ingo Korb");
   chlinexy(0, 1, 40);
   chlinexy(0, STATUS_START, 40);
   clear_mainarea_full();

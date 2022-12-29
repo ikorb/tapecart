@@ -53,8 +53,6 @@ extern uint16_t erase_pages;
 extern char fname[FILENAME_BUFFER_LENGTH];
 extern char strbuf[16];
 
-extern unsigned char current_device;
-
 extern long          flash_offset;
 extern uint16_t      flash_page, pages_erased;
 extern size_t        len;
