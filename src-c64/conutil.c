@@ -263,7 +263,7 @@ uint32_t read_uint(uint32_t preset, bool hex, unsigned char width,
           ++pos;
           cputc(ch);
         }
-      } else {
+      } else if (pos < width) {
         if ((hexbuffer[0] == '$' && isxdigit(ch)) ||
             (hexbuffer[0] != '$' && isdigit(ch))  ||
             ch == ' ') {
