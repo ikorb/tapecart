@@ -1,5 +1,9 @@
 Notable changes in flashtool:
 =============================
+Version 1.2a:
+- fix writing of TCRTs that are not a multiple of the page size
+  (found by Tom-Cat/Nostalgia)
+
 Version 1.2:
 - support reading data from a REU instead of disk
 - add a minimal drive menu to send commands and
