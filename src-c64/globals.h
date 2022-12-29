@@ -59,6 +59,7 @@ extern uint16_t      flash_page, pages_erased;
 extern size_t        len;
 extern unsigned char res;
 
+void update_status(void);
 void display_status(void);
 void update_top_status(void);
 bool write_file(long limit);

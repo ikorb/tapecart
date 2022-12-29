@@ -298,6 +298,7 @@ void advanced_menu(void) {
   while (1) {
     current_function = "Advanced options";
     update_top_status();
+    update_status();
     display_status();
 
     clear_mainarea();

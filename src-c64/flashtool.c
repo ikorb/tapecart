@@ -64,70 +64,77 @@ uint8_t  databuffer[4096];
 uint32_t total_size;
 uint16_t page_size;
 uint16_t erase_pages;
+bool loader_is_blank;
+bool loader_is_default;
 
 char fname[FILENAME_BUFFER_LENGTH];
 char strbuf[16];
 const char* current_function;
+
+char tc_fname[FILENAME_LENGTH + 1];
+uint16_t tc_loadinfo_offset, tc_loadinfo_length, tc_loadinfo_calladdr, tc_loader_chksum;
 
 long          flash_offset;
 uint16_t      flash_page, pages_erased;
 size_t        len;
 unsigned char res;
 
-
-void display_status(void) {
-  uint16_t offset, length, calladdr;
-  uint16_t wordval;
-  unsigned char i, tmp, is_default;
-
-  cputsxy(0, STATUS_START+1, "Current tapecart status:\r\n");
+void update_status(void) {
+  uint8_t i;
 
   /* read size info */
   tapecart_read_sizes(&total_size, &page_size, &erase_pages);
 
   /* read data offset/length and file name */
-  tapecart_read_loadinfo(&offset, &length, &calladdr, fname);
+  tapecart_read_loadinfo(&tc_loadinfo_offset, &tc_loadinfo_length, &tc_loadinfo_calladdr, tc_fname);
 
-  if (offset != 0xffff) {
-    cprintf("  Data start       $%04x\r\n", offset);
-    cprintf("  Data length      $%04x\r\n", length);
-    cprintf("  Call address     $%04x\r\n", calladdr);
+  for (i = 0; i < FILENAME_LENGTH; ++i) {
+    if (tc_fname[i] < 32 || (tc_fname[i] >= 128 && tc_fname[i] <= 159))
+      tc_fname[i] = '?';
+  }
+  tc_fname[FILENAME_LENGTH] = 0;
+
+  /* read loader and calculate checksum */
+  tapecart_read_loader(databuffer);
+
+  tc_loader_chksum = 0;
+  loader_is_blank = true;
+  loader_is_default = true;
+
+  for (i = 0; i < LOADER_LENGTH; ++i) {
+    tc_loader_chksum += databuffer[i];
+    if (databuffer[i] != 0xff)
+      loader_is_blank = false;
+    if (databuffer[i] != default_loader[i])
+      loader_is_default = false;
+  }
+}
+
+void display_status(void) {
+  chlinexy(0, STATUS_START, 40);
+  cputsxy(0, STATUS_START+1, "Current tapecart status:\r\n");
+
+  if (tc_loadinfo_offset != 0xffff) {
+    cprintf("  Data start       $%04x\r\n", tc_loadinfo_offset);
+    cprintf("  Data length      $%04x\r\n", tc_loadinfo_length);
+    cprintf("  Call address     $%04x\r\n", tc_loadinfo_calladdr);
   } else {
     cprintf("  Data not programmed\r\n");
     cclear(40);
     cclear(40);
   }
 
-  for (i = 0; i < FILENAME_LENGTH; ++i) {
-    if (fname[i] < 32 || (fname[i] >= 128 && fname[i] <= 159))
-      fname[i] = '?';
-  }
-  fname[FILENAME_LENGTH] = 0;
+  cprintf("  Display name    [%-16s]\r\n", tc_fname);
 
-  cprintf("  Display name    [%-16s]\r\n", fname);
-
-  /* read loader and calculate checksum */
-  tapecart_read_loader(databuffer);
-
-  wordval = 0;
-  tmp = 0; // validity flag
-  is_default = 1;
-
-  for (i = 0; i < LOADER_LENGTH; ++i) {
-    wordval += databuffer[i];
-    if (databuffer[i] != 0xff)
-      tmp = 1;
-    if (databuffer[i] != default_loader[i])
-      is_default = 0;
-  }
-
-  if (tmp) {
+  if (loader_is_blank) {
+    cprintf("  Loader not programmed  \r\n");
+  } else {
     cprintf("  Loader checksum  ");
-    revers(!is_default);
-    cprintf("$%04x", wordval);
+    revers(!loader_is_default);
+    cprintf("$%04x", tc_loader_chksum);
     revers(0);
 
-    if (is_default) {
+    if (loader_is_default) {
       textcolor(COLOR_LIGHTGREEN);
       cprintf(" (default) ");
     } else {
@@ -136,9 +143,7 @@ void display_status(void) {
     }
     textcolor(COLOR_WHITE);
     cprintf("\r\n");
-  } else
-    cprintf("  Loader not programmed  \r\n");
-
+  }
 }
 
 void update_top_status(void) {
@@ -377,6 +382,7 @@ int main(void) {
   }
 
   while (1) {
+    update_status();
     display_status();
     current_function = NULL;
     update_top_status();
