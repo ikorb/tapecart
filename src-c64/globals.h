@@ -52,6 +52,7 @@ extern uint16_t erase_pages;
 
 extern char fname[FILENAME_BUFFER_LENGTH];
 extern char strbuf[16];
+extern const char* current_function;
 
 extern long          flash_offset;
 extern uint16_t      flash_page, pages_erased;
@@ -59,7 +60,7 @@ extern size_t        len;
 extern unsigned char res;
 
 void display_status(void);
-void display_devicenum(void);
+void update_top_status(void);
 bool write_file(long limit);
 
 

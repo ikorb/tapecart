@@ -43,20 +43,22 @@
 
 static void change_device(void) {
   unsigned char newdevice = CURRENT_DEVICE;
-  
-  cputsxy(9, 2, "Change current device");
+
+  current_function = "Change device";
+  update_top_status();
+
   cputsxy(0, 10, "Enter 0 to select REU");
 
-  cputsxy(0, 4, "Device number: [  ]");
+  cputsxy(0, 3, "Device number: [  ]");
   do {
-    newdevice = read_uint(newdevice, false, 2, 16, 4);
+    newdevice = read_uint(newdevice, false, 2, 16, 3);
     if (input_aborted)
       return;
   } while ((newdevice != 0 && newdevice < 4) || newdevice > 30);
 
   CURRENT_DEVICE = newdevice;
   check_fastloader_capability();
-  display_devicenum();
+  update_top_status();
 }
 
 static void send_command(void) {
@@ -66,10 +68,12 @@ static void send_command(void) {
   }
 
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  cputsxy(14, 2, "Send command");
+  current_function = "Send command";
+  update_top_status();
+
   //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "Command: [                             ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 10, 4, 39 - 10))
+  cputsxy(0, 3, "Command: [                             ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 10, 3, 39 - 10))
     return;
 
   res = cbm_open(15, CURRENT_DEVICE, 15, fname);
@@ -105,6 +109,9 @@ static void show_directory(void) {
     cputsxy(2, STATUS_START - 2, "Failed to read directory");
     goto cleanup;
   }
+
+  current_function = "Directory";
+  update_top_status();
 
   clear_mainarea_full();
   gotoxy(0, 2);
@@ -175,6 +182,8 @@ static const char *drive_menu_text[] = {
 
 void drive_menu(void) {
   while (1)  {
+    current_function = "Drive menu";
+    update_top_status();
     display_status();
 
     clear_mainarea();
@@ -203,7 +212,6 @@ void drive_menu(void) {
           eload_set_drive_check_fastload(CURRENT_DEVICE);
         }
       }
-      display_devicenum();
       break;
 
     case 4:

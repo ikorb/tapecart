@@ -67,6 +67,7 @@ uint16_t erase_pages;
 
 char fname[FILENAME_BUFFER_LENGTH];
 char strbuf[16];
+const char* current_function;
 
 long          flash_offset;
 uint16_t      flash_page, pages_erased;
@@ -140,8 +141,16 @@ void display_status(void) {
 
 }
 
-void display_devicenum(void) {
-  gotoxy(22, STATUS_START);
+void update_top_status(void) {
+  chlinexy(0, 1, 40);
+  if (current_function) {
+    gotoxy(1, 1);
+    cputc('\0263');
+    cputs(current_function);
+    cputc('\0253');
+  }
+
+  gotoxy(22, 1);
   if (CURRENT_DEVICE) {
     cprintf("\0263Device: %02d/%s\0253", CURRENT_DEVICE, eload_drive_is_fast() ? "fast" : "slow");
   } else {
@@ -197,7 +206,8 @@ static void write_onefiler(void) {
   size_t i;
 
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  cputsxy(13, 2, "Write onefiler");
+  current_function = "Write onefiler";
+  update_top_status();
   //             0123456789012345678901234567890123456789
   cputsxy(0, 4, "File name: [                           ]");
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
@@ -294,8 +304,9 @@ static void write_onefiler(void) {
 static void display_cartinfo(void) {
   unsigned char i, tmp;
 
-  cputsxy(12, 2, "Cart information");
-  gotoxy(0, 4);
+  current_function = "Cart information";
+  update_top_status();
+  gotoxy(0, 3);
   tapecart_sendbyte(CMD_READ_DEVICEINFO);
   i = 0;
   do {
@@ -306,13 +317,13 @@ static void display_cartinfo(void) {
 
   cprintf("Ident: %s\r\n", databuffer);
 
-  gotoxy(0, 6);
+  gotoxy(0, 5);
   cprintf("Total size: %7ld byte", total_size);
 
-  gotoxy(0, 7);
+  gotoxy(0, 6);
   cprintf("Page size : %7d byte", page_size);
 
-  gotoxy(0, 8);
+  gotoxy(0, 7);
   if (erase_pages) {
     cprintf("Erase size: %7ld byte (%d page%s)",
             (uint32_t)erase_pages * page_size,
@@ -359,8 +370,6 @@ int main(void) {
   chlinexy(0, STATUS_START, 40);
   clear_mainarea_full();
 
-  display_devicenum();
-
   if (!tapecart_cmdmode()) {
     gotoxy(0, 3);
     cprintf("Error: Tapecart not detected.\n");
@@ -369,6 +378,8 @@ int main(void) {
 
   while (1) {
     display_status();
+    current_function = NULL;
+    update_top_status();
 
     clear_mainarea();
     res = show_menu(sizeof(main_menu) / sizeof(main_menu[0]),

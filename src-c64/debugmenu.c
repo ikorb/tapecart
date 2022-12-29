@@ -123,6 +123,9 @@ static const char *debug_menu[] = {
 
 void debug_tool_menu(void) {
   while (1) {
+    current_function = "Debug menu";
+    update_top_status();
+
     clear_mainarea();
     res = show_menu(sizeof(debug_menu) / sizeof(debug_menu[0]),
                     debug_menu, 0, 2, 3);

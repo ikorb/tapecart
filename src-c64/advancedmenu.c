@@ -45,7 +45,9 @@ int  byteswritten;
 long bytesread;
 
 static void write_datafile(void) {
-  cputsxy(13, 2, "Write data file");
+  current_function = "Write data file";
+  update_top_status();
+
   //             0123456789012345
   cputsxy(0, 4, "Flash offset: [       ]");
   flash_offset = read_uint(0, true, 7, 15, 4);
@@ -132,12 +134,13 @@ void dump_flash_to_file(void) {
 static void dump_flash(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
 
-  cputsxy(6, 2, "Dump flash contents to file");
+  current_function = "Dump flash to file";
+  update_top_status();
   cputsxy(0, 10, "Note: Screen will be blanked,");
   cputsxy(6, 11, "hold RUN/STOP to abort.");
   //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
+  cputsxy(0, 3, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 3, 39 - 12))
     return;
 
   res = cbm_open(CBM_LFN, CURRENT_DEVICE, 1, fname);
@@ -151,6 +154,8 @@ static void dump_flash(void) {
 
 
 static void write_default_loader(void) {
+  current_function = "Write default loader";
+  update_top_status();
   cputsxy(2, 3, "Writing...");
 
   tapecart_write_loader(default_loader);
@@ -162,7 +167,8 @@ static void write_default_loader(void) {
 
 static void write_custom_loader(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  cputsxy(10, 2, "Write custom loader");
+  current_function = "Write custom loader";
+  update_top_status();
   //             0123456789012345678901234567890123456789
   cputsxy(0, 4, "File name: [                           ]");
   if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
@@ -194,10 +200,12 @@ static void write_custom_loader(void) {
 
 static void dump_loader(void) {
   memset(fname, 0, FILENAME_BUFFER_LENGTH);
-  cputsxy(10, 2, "Dump loader to file");
+  current_function = "Dump loader";
+  update_top_status();
+
   //             0123456789012345678901234567890123456789
-  cputsxy(0, 4, "File name: [                           ]");
-  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 4, 39 - 12))
+  cputsxy(0, 3, "File name: [                           ]");
+  if (!read_string(fname, FILENAME_BUFFER_LENGTH - 1, 12, 3, 39 - 12))
     return;
 
   res = cbm_open(CBM_LFN, CURRENT_DEVICE, 1, fname);
@@ -226,10 +234,12 @@ static void change_name(void) {
 
   tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
 
-  cputsxy(10, 2, "Change display name");
+  current_function = "Set display name";
+  update_top_status();
+
   //                            1234567890123456
-  cputsxy(0, 4, "Display name: [                ]");
-  if (!read_string(fname, FILENAME_LENGTH, 15, 4, FILENAME_LENGTH))
+  cputsxy(0, 3, "Display name: [                ]");
+  if (!read_string(fname, FILENAME_LENGTH, 15, 3, FILENAME_LENGTH))
     return;
 
   if (strlen(fname) < FILENAME_LENGTH) {
@@ -246,22 +256,24 @@ static void change_bootloc(void) {
 
   tapecart_read_loadinfo(&dataofs, &datalen, &calladdr, fname);
 
-  cputsxy(8, 2, "Change bootfile location");
-  gotoxy(0, 4);
+  current_function = "Update bootfile";
+  update_top_status();
+
+  gotoxy(0, 3);
   //       0123456789012345
   cprintf("Data offset : [$%04x]", dataofs);
-  gotoxy(0, 5);
+  gotoxy(0, 4);
   cprintf("Data length : [$%04x]", datalen);
-  gotoxy(0, 6);
+  gotoxy(0, 5);
   cprintf("Call address: [$%04x]", calladdr);
 
-  dataofs  = read_uint(dataofs, true, 5, 15, 4);
+  dataofs  = read_uint(dataofs, true, 5, 15, 3);
   if (input_aborted)
     return;
-  datalen  = read_uint(datalen, true, 5, 15, 5);
+  datalen  = read_uint(datalen, true, 5, 15, 4);
   if (input_aborted)
     return;
-  calladdr = read_uint(calladdr, true, 5, 15, 6);
+  calladdr = read_uint(calladdr, true, 5, 15, 5);
   if (input_aborted)
     return;
 
@@ -283,7 +295,9 @@ static const char *advanced_menu_text[] = {
 };
 
 void advanced_menu(void) {
-  while (1)  {
+  while (1) {
+    current_function = "Advanced options";
+    update_top_status();
     display_status();
 
     clear_mainarea();
