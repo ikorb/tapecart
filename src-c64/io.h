@@ -38,6 +38,8 @@
 
 #define CURRENT_DEVICE (*((unsigned char*)0xba))
 
+void __fastcall__ send_initialize(void);
+
 // see eload/src/drivetype.s
 #define DRIVETYPE_NOT_PRESENT 0
 #define DRIVETYPE_UNKNOWN     1

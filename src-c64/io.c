@@ -110,4 +110,16 @@ void __fastcall__ check_fastloader_capability(void) {
   }
 
   drive_type = eload_set_drive_check_fastload(CURRENT_DEVICE);
+
+  // try to avoid occasional "disk id mismatch" errors
+  if (drive_type != DRIVETYPE_NOT_PRESENT) {
+    send_initialize();
+  }
+}
+
+void __fastcall__ send_initialize(void) {
+  if (CURRENT_DEVICE) {
+    cbm_open(15, CURRENT_DEVICE, 15, "i");
+    cbm_close(15);
+  }
 }
